@@ -1,6 +1,7 @@
 import pygame
 from Morztypes import Vector2, Vector3
 from board import Board
+from pieces import Piece, Knight
 
 pygame.init()
 
@@ -32,6 +33,13 @@ class Main:
 
         self._board_surface = pygame.Surface(self.total_board_size.unwrap())
 
+        self.pieces_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
+
+        self.textures = {
+            Piece.White + Piece.Knight: pygame.image.load("Textures\\KnightWhite.png"),
+            Piece.Black + Piece.Knight: pygame.image.load("Textures\\KnightBlack.png")
+        }
+
     def run(self):
         """
         Main game loop function
@@ -39,6 +47,8 @@ class Main:
 
         while True:
             self.display.fill(self.background_color.unwrap())
+            self.board_surface.fill(self.background_color.unwrap())
+            self.pieces_surface.fill((0, 0, 0, 0))
 
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
@@ -47,6 +57,9 @@ class Main:
                 elif e.type == pygame.KEYDOWN:
                     if e.unicode == "":
                         self.close_game()
+
+                    elif e.unicode == "a":
+                        self.board.pieces.append(Knight(Vector2(2, 3), True))
 
             # Draw the board
             for cell_x in range(self.board.size.x):
@@ -61,13 +74,19 @@ class Main:
                         # If the cell is black
                         pygame.draw.rect(self.board_surface, self.black_cell_color.unwrap(), cell_rect)
 
-            # Blit the surfaces
+            # Draw the pieces
+            for piece in self.board.pieces:
+                piece_position = piece.position * self.board_cell_size
+                self.pieces_surface.blit(pygame.transform.scale(self.textures[piece.value], self.board_cell_size.unwrap()), piece_position.unwrap())
 
+            # Blit the surfaces
             # Outline and blit the board
             board_outline_position = self.board_position - Vector2(20)
             board_outline_rect = board_outline_position.unwrap() + (self.total_board_size + Vector2(40)).unwrap()
             pygame.draw.rect(self.display, self.color_palette[2].unwrap(), board_outline_rect)
             self.display.blit(self.board_surface, self.board_position.unwrap())
+            # Blit the pieces
+            self.display.blit(self.pieces_surface, self.board_position.unwrap())
 
             self.clock.tick(self.fps)
             pygame.display.flip()
