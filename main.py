@@ -18,7 +18,13 @@ class Main:
 
         self._clock = pygame.time.Clock()
 
-        self._background_color = Vector3(0, 0, 0)
+        self.color_palette = [Vector3(243, 238, 234), Vector3(243, 238, 234), Vector3(176, 166, 149), Vector3(119, 107, 93)]
+
+        self._background_color = self.color_palette[0]
+
+        self.board_size = Vector2(8, 8)
+        self.white_cell_color = self.color_palette[1]
+        self.black_cell_color = self.color_palette[2]
 
     def run(self):
         """
