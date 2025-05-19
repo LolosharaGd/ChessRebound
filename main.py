@@ -1,7 +1,7 @@
-import pygame as pg
+import pygame
 from Morztypes import Vector2, Vector3
 
-pg.init()
+pygame.init()
 
 
 class Main:
@@ -14,9 +14,11 @@ class Main:
 
         self._fps = fps
 
-        self._display = pg.display.set_mode(resolution.unwrap())
+        self._display = pygame.display.set_mode(resolution.unwrap())
 
-        self._clock = pg.time.Clock()
+        self._clock = pygame.time.Clock()
+
+        self._background_color = Vector3(0, 0, 0)
 
     def run(self):
         """
@@ -24,18 +26,18 @@ class Main:
         """
 
         while True:
-            self.display.fill(Vector3(0, 0, 0).unwrap())
+            self.display.fill(self.background_color.unwrap())
 
-            for e in pg.event.get():
-                if e.type == pg.QUIT:
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
                     self.close_game()
 
-                elif e.type == pg.KEYDOWN:
+                elif e.type == pygame.KEYDOWN:
                     if e.unicode == "":
                         self.close_game()
 
             self.clock.tick(self.fps)
-            pg.display.flip()
+            pygame.display.flip()
 
     def close_game(self):
         quit("Game closed")
@@ -49,9 +51,9 @@ class Main:
 
     @window_resolution.setter
     def window_resolution(self, value) -> None:
-        if not type(value) in [int, float, Vector2, Vector3, list, tuple, set]:
+        if  not Vector3.can_be_used(value):
             raise ValueError("Window resolution is Vector2, so it can only bet set to int, float, Vector2, Vector3, list, tuple and set")
-        self._window_resolution = value
+        self._window_resolution = Vector3(value)
 
     @property
     def window_width(self) -> float:
@@ -108,7 +110,7 @@ class Main:
         self._fps = value
 
     @property
-    def display(self) -> pg.surface.Surface:
+    def display(self) -> pygame.surface.Surface:
         """
         Pygame Surface Main game display
         """
@@ -116,10 +118,12 @@ class Main:
 
     @display.setter
     def display(self, value) -> None:
+        if not isinstance(value, pygame.surface.Surface):
+            raise ValueError("Display is a Pygame Surface, so itt can only be set to pygame.surface.Surface")
         self._display = value
 
     @property
-    def clock(self) -> pg.time.Clock:
+    def clock(self) -> pygame.time.Clock:
         """
         Pygame Clock Main game clock
         """
@@ -128,6 +132,19 @@ class Main:
     @clock.setter
     def clock(self, value) -> None:
         self._clock = value
+
+    @property
+    def background_color(self) -> Vector3:
+        """
+        Main game window background color
+        """
+        return self._background_color
+
+    @background_color.setter
+    def background_color(self, value) -> None:
+        if not Vector3.can_be_used(value):
+            raise ValueError("Background color is a Vector3, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
+        self._background_color = Vector3(value)
 
 
 if __name__ == "__main__":

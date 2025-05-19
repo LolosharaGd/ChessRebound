@@ -2,6 +2,11 @@ import math
 
 
 class Vector2:
+    """
+    Two floats in one variable\n
+    Has x and y
+    """
+
     def __init__(self, x=None, y=None):
         self.x = 0
         self.y = 0
@@ -68,8 +73,20 @@ class Vector2:
     def __pow__(self, power, modulo=None):
         return Vector2(self.x ** Vector2(power).x, self.y ** Vector2(power).y)
 
+    def can_be_used(self, value) -> bool:
+        """
+        Returns whether value can be used as a value when instancing Vector2
+        """
+
+        return isinstance(value, (int, float, Vector2, Vector3, list, tuple, set))
+
 
 class Vector3:
+    """
+    Three floats in one variable\n
+    Has x, y and z
+    """
+
     def __init__(self, x=None, y=None, z=None):
         self.x = 0
         self.y = 0
@@ -157,6 +174,13 @@ class Vector3:
 
     def __pow__(self, power, modulo=None):
         return Vector3(self.x ** Vector3(power).x, self.y ** Vector3(power).y, self.z ** Vector3(power).z)
+
+    def can_be_used(self, value) -> bool:
+        """
+        Returns whether value can be used as a value when instancing Vector2
+        """
+
+        return isinstance(value, (int, float, Vector2, Vector3, list, tuple, set))
 
 
 class Particle:
