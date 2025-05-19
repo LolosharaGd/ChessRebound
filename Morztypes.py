@@ -48,46 +48,25 @@ class Vector2:
         return Vector2(-self.x, -self.y)
 
     def __sub__(self, other):
-        if type(other) == Vector2:
-            return Vector2(self.x - other.x, self.y - other.y)
-        elif type(other) == int or type(other) == float:
-            return Vector2(self.x - other, self.y - other)
+        return Vector2(self.x - Vector2(other).x, self.y - Vector2(other).y)
 
     def __mul__(self, other):
-        if type(other) == Vector2:
-            return Vector2(self.x * other.x, self.y * other.y)
-        elif type(other) == int or type(other) == float:
-            return Vector2(self.x * other, self.y * other)
+        return Vector2(self.x * Vector2(other).x, self.y * Vector2(other).y)
 
     def __add__(self, other):
-        if type(other) == Vector2:
-            return Vector2(self.x + other.x, self.y + other.y)
-        elif type(other) == int or type(other) == float:
-            return Vector2(self.x + other, self.y + other)
+        return Vector2(self.x + Vector2(other).x, self.y + Vector2(other).y)
 
     def __truediv__(self, other):
-        if type(other) == Vector2:
-            return Vector2(self.x / other.x, self.y / other.y)
-        elif type(other) == int or type(other) == float:
-            return Vector2(self.x / other, self.y / other)
+        return Vector2(self.x / Vector2(other).x, self.y / Vector2(other).y)
 
     def __floordiv__(self, other):
-        if type(other) == Vector2:
-            return Vector2(self.x // other.x, self.y // other.y)
-        elif type(other) == int or type(other) == float:
-            return Vector2(self.x // other, self.y // other)
+        return Vector2(self.x // Vector2(other).x, self.y // Vector2(other).y)
 
     def __mod__(self, other):
-        if type(other) == Vector2:
-            return Vector2(self.x % other.x, self.y % other.y)
-        elif type(other) == int or type(other) == float:
-            return Vector2(self.x % other, self.y % other)
+        return Vector2(self.x % Vector2(other).x, self.y % Vector2(other).y)
 
     def __pow__(self, power, modulo=None):
-        if type(power) == Vector2:
-            return Vector2(self.x ** power.x, self.y ** power.y)
-        elif type(power) == int or type(power) == float:
-            return Vector2(self.x ** power, self.y ** power)
+        return Vector2(self.x ** Vector2(power).x, self.y ** Vector2(power).y)
 
 
 class Vector3:
@@ -159,60 +138,25 @@ class Vector3:
         return Vector3(-self.x, -self.y, -self.z)
 
     def __add__(self, other):
-        if other is Vector3:
-            return Vector3(self.x + other.x, self.y + other.y, self.z + other.z)
-        elif other is Vector2:
-            return Vector3(self.x + other.x, self.y + other.y, self.z)
-        elif other is int or other is float:
-            return Vector3(self.x + other, self.y + other, self.z + other)
+        return Vector3(self.x + Vector3(other).x, self.y + Vector3(other).y, self.z + Vector3(other).z)
 
     def __sub__(self, other):
-        if other is Vector3:
-            return Vector3(self.x - other.x, self.y - other.y, self.z - other.z)
-        elif other is Vector2:
-            return Vector3(self.x - other.x, self.y - other.y, self.z)
-        elif other is int or other is float:
-            return Vector3(self.x - other, self.y - other, self.z - other)
+        return Vector3(self.x - Vector3(other).x, self.y - Vector3(other).y, self.z - Vector3(other).z)
 
     def __mul__(self, other):
-        if other is Vector3:
-            return Vector3(self.x * other.x, self.y * other.y, self.z * other.z)
-        elif other is Vector2:
-            return Vector3(self.x * other.x, self.y * other.y, self.z)
-        elif other is int or other is float:
-            return Vector3(self.x * other, self.y * other, self.z * other)
+        return Vector3(self.x * Vector3(other).x, self.y * Vector3(other).y, self.z * Vector3(other).z)
 
     def __truediv__(self, other):
-        if other is Vector3:
-            return Vector3(self.x / other.x, self.y / other.y, self.z / other.z)
-        elif other is Vector2:
-            return Vector3(self.x / other.x, self.y / other.y, self.z)
-        elif other is int or other is float:
-            return Vector3(self.x / other, self.y / other, self.z / other)
+        return Vector3(self.x / Vector3(other).x, self.y / Vector3(other).y, self.z / Vector3(other).z)
 
     def __floordiv__(self, other):
-        if other is Vector3:
-            return Vector3(self.x // other.x, self.y // other.y, self.z // other.z)
-        elif other is Vector2:
-            return Vector3(self.x // other.x, self.y // other.y, self.z)
-        elif other is int or other is float:
-            return Vector3(self.x // other, self.y // other, self.z // other)
+        return Vector3(self.x // Vector3(other).x, self.y // Vector3(other).y, self.z // Vector3(other).z)
 
     def __mod__(self, other):
-        if other is Vector3:
-            return Vector3(self.x % other.x, self.y % other.y, self.z % other.z)
-        elif other is Vector2:
-            return Vector3(self.x % other.x, self.y % other.y, self.z)
-        elif other is int or other is float:
-            return Vector3(self.x % other, self.y % other, self.z % other)
+        return Vector3(self.x % Vector3(other).x, self.y % Vector3(other).y, self.z % Vector3(other).z)
 
     def __pow__(self, power, modulo=None):
-        if power is Vector3:
-            return Vector3(self.x ** power.x, self.y ** power.y, self.z ** power.z)
-        elif power is Vector2:
-            return Vector3(self.x ** power.x, self.y ** power.y, self.z)
-        elif power is int or power is float:
-            return Vector3(self.x ** power, self.y ** power, self.z ** power)
+        return Vector3(self.x ** Vector3(power).x, self.y ** Vector3(power).y, self.z ** Vector3(power).z)
 
 
 class Particle:
