@@ -1,5 +1,6 @@
 import pygame
 from Morztypes import Vector2, Vector3
+from board import *
 
 pygame.init()
 
@@ -22,11 +23,12 @@ class Main:
 
         self._background_color = self.color_palette[0]
 
-        self.board_size = Vector2(8, 8)
         self.board_cell_size = Vector2(100, 100)
         self.white_cell_color = self.color_palette[1]
         self.black_cell_color = self.color_palette[2]
         self.board_position = Vector2(140, 140)
+
+        self.board = Board(Vector2(8, 8))
 
         self.board_surface = pygame.Surface(self.total_board_size.unwrap())
 
@@ -47,8 +49,8 @@ class Main:
                         self.close_game()
 
             # Draw the board
-            for cell_x in range(self.board_size.x):
-                for cell_y in range(self.board_size.y):
+            for cell_x in range(self.board.size.x):
+                for cell_y in range(self.board.size.y):
                     cell_position = self.board_cell_size * Vector2(cell_x, cell_y)
                     cell_rect = cell_position.unwrap() + self.board_cell_size.unwrap()
 
