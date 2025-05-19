@@ -26,11 +26,11 @@ class Vector2:
                 self.x = x
                 self.y = y
 
-        if x is list or x is tuple or x is set:
+        if isinstance(x, (list, tuple, set)):
             self.x = x[0]
             self.y = x[1]
 
-        if x is Vector2 or x is Vector3:
+        if isinstance(x, (Vector2, Vector3)):
             self.x = x.x
             self.y = x.y
 
@@ -131,16 +131,16 @@ class Vector3:
                     self.y = y
                     self.z = z
 
-        if x is list or x is tuple or x is set:
+        if isinstance(x, (list, tuple, set)):
             self.x = x[0]
             self.y = x[1]
             self.z = x[2]
 
-        if x is Vector2:
+        if isinstance(x, Vector2):
             self.x = x.x
             self.y = x.y
 
-        if x is Vector3:
+        if isinstance(x, Vector3):
             self.x = x.x
             self.y = x.y
             self.z = x.z

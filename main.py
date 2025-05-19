@@ -18,13 +18,17 @@ class Main:
 
         self._clock = pygame.time.Clock()
 
-        self.color_palette = [Vector3(243, 238, 234), Vector3(243, 238, 234), Vector3(176, 166, 149), Vector3(119, 107, 93)]
+        self.color_palette = [Vector3(243, 238, 234), Vector3(235, 227, 213), Vector3(176, 166, 149), Vector3(119, 107, 93)]
 
         self._background_color = self.color_palette[0]
 
         self.board_size = Vector2(8, 8)
+        self.board_cell_size = Vector2(100, 100)
         self.white_cell_color = self.color_palette[1]
         self.black_cell_color = self.color_palette[2]
+        self.board_position = Vector2(140, 140)
+
+        self.board_surface = pygame.Surface(self.total_board_size.unwrap())
 
     def run(self):
         """
@@ -41,6 +45,27 @@ class Main:
                 elif e.type == pygame.KEYDOWN:
                     if e.unicode == "":
                         self.close_game()
+
+            # Draw the board
+            for cell_x in range(self.board_size.x):
+                for cell_y in range(self.board_size.y):
+                    cell_position = self.board_cell_size * Vector2(cell_x, cell_y)
+                    cell_rect = cell_position.unwrap() + self.board_cell_size.unwrap()
+
+                    if (cell_x + cell_y) % 2 == 0:
+                        # If the cell is white
+                        pygame.draw.rect(self.board_surface, self.white_cell_color.unwrap(), cell_rect)
+                    else:
+                        # If the cell is black
+                        pygame.draw.rect(self.board_surface, self.black_cell_color.unwrap(), cell_rect)
+
+            # Blit the surfaces
+
+            # Outline and blit the board
+            board_outline_position = self.board_position - Vector2(20)
+            board_outline_rect = board_outline_position.unwrap() + (self.total_board_size + Vector2(40)).unwrap()
+            pygame.draw.rect(self.display, self.color_palette[2].unwrap(), board_outline_rect)
+            self.display.blit(self.board_surface, self.board_position.unwrap())
 
             self.clock.tick(self.fps)
             pygame.display.flip()
@@ -151,6 +176,10 @@ class Main:
         if not Vector3.can_be_used(value):
             raise ValueError("Background color is a Vector3, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
         self._background_color = Vector3(value)
+
+    @property
+    def total_board_size(self) -> Vector2:
+        return self.board_size * self.board_cell_size
 
 
 if __name__ == "__main__":
