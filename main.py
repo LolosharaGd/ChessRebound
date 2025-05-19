@@ -1,6 +1,6 @@
 import pygame
 from Morztypes import Vector2, Vector3
-from board import *
+from board import Board
 
 pygame.init()
 
@@ -19,18 +19,18 @@ class Main:
 
         self._clock = pygame.time.Clock()
 
-        self.color_palette = [Vector3(243, 238, 234), Vector3(235, 227, 213), Vector3(176, 166, 149), Vector3(119, 107, 93)]
+        self._color_palette = [Vector3(243, 238, 234), Vector3(235, 227, 213), Vector3(176, 166, 149), Vector3(119, 107, 93)]
 
         self._background_color = self.color_palette[0]
 
-        self.board_cell_size = Vector2(100, 100)
-        self.white_cell_color = self.color_palette[1]
-        self.black_cell_color = self.color_palette[2]
-        self.board_position = Vector2(140, 140)
+        self._board_cell_size = Vector2(100, 100)
+        self._white_cell_color = self.color_palette[1]
+        self._black_cell_color = self.color_palette[2]
+        self._board_position = Vector2(140, 140)
 
-        self.board = Board(Vector2(8, 8))
+        self._board = Board(Vector2(8, 8))
 
-        self.board_surface = pygame.Surface(self.total_board_size.unwrap())
+        self._board_surface = pygame.Surface(self.total_board_size.unwrap())
 
     def run(self):
         """
@@ -84,9 +84,9 @@ class Main:
 
     @window_resolution.setter
     def window_resolution(self, value) -> None:
-        if  not Vector3.can_be_used(value):
+        if not Vector3.can_be_used(value):
             raise ValueError("Window resolution is Vector2, so it can only bet set to int, float, Vector2, Vector3, list, tuple and set")
-        self._window_resolution = Vector3(value)
+        self._window_resolution = Vector2(value)
 
     @property
     def window_width(self) -> float:
@@ -152,7 +152,7 @@ class Main:
     @display.setter
     def display(self, value) -> None:
         if not isinstance(value, pygame.surface.Surface):
-            raise ValueError("Display is a Pygame Surface, so itt can only be set to pygame.surface.Surface")
+            raise ValueError("Display is a Pygame Surface, so it can only be set to pygame.surface.Surface")
         self._display = value
 
     @property
@@ -164,6 +164,9 @@ class Main:
 
     @clock.setter
     def clock(self, value) -> None:
+        if not isinstance(value, pygame.time.Clock):
+            raise ValueError("Clock is a pygame.time.Clock, so it can only be set to pygame.time.Clock")
+
         self._clock = value
 
     @property
@@ -181,7 +184,119 @@ class Main:
 
     @property
     def total_board_size(self) -> Vector2:
-        return self.board_size * self.board_cell_size
+        """
+        Vector2 total size of the board (not including outline) in pixels\n
+        Shorthand self.board.size * self.board_cell_size
+        """
+        return self.board.size * self.board_cell_size
+
+    @property
+    def color_palette(self) -> list[Vector3]:
+        """
+        The color palette of the game\n
+        Has at least 4 colors (Vector3)\n
+        You do not have to use it, but the base game does
+        """
+        return self._color_palette
+
+    @color_palette.setter
+    def color_palette(self, value) -> None:
+        if not isinstance(value, list):
+            raise ValueError("Color palette is a list of at least 4 colors (Vector3), so it can only be set to a list")
+        if len(value) < 4:
+            raise SyntaxError("Color palette is a list of at least 4 colors (Vector3), but new list contains only " + str(len(value)))
+
+        all_values_are_colors = True
+        for index, value_color in enumerate(value):
+            all_values_are_colors = all_values_are_colors and isinstance(value_color, Vector3)
+            if not all_values_are_colors:
+                raise TypeError("Color palette is a list of at least 4 colors (Vector3), but element " + str(index) + " in new list is not a color (Vector3)")
+
+        self._color_palette = value.copy()
+
+    @property
+    def board_cell_size(self) -> Vector2:
+        """
+        Vector2 size of one individual cell on a board
+        """
+        return self._board_cell_size
+
+    @board_cell_size.setter
+    def board_cell_size(self, value):
+        if not Vector2.can_be_used(value):
+            raise ValueError("Board cell size is a Vector2, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
+
+        self._board_cell_size = value
+
+    @property
+    def white_cell_color(self) -> Vector3:
+        """
+        Vector3 main game white cells color
+        """
+        return self._white_cell_color
+
+    @white_cell_color.setter
+    def white_cell_color(self, value) -> None:
+        if not Vector3.can_be_used(value):
+            raise ValueError("White cell color is a Vector3, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
+        self._white_cell_color = Vector3(value)
+
+    @property
+    def black_cell_color(self) -> Vector3:
+        """
+        Vector3 main game black cells color
+        """
+        return self._black_cell_color
+
+    @black_cell_color.setter
+    def black_cell_color(self, value) -> None:
+        if not Vector3.can_be_used(value):
+            raise ValueError("Black cell color is a Vector3, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
+        self._black_cell_color = Vector3(value)
+
+    @property
+    def board_position(self) -> Vector2:
+        """
+        Vector2 position of top-left corner of the board in pixels on the main display
+        """
+        return self._board_position
+
+    @board_position.setter
+    def board_position(self, value) -> None:
+        if not Vector3.can_be_used(value):
+            raise ValueError("Board position is Vector2, so it can only bet set to int, float, Vector2, Vector3, list, tuple and set")
+        self._board_position = Vector2(value)
+
+    @property
+    def board(self) -> Board:
+        """
+        The main game board object\n
+        Does not include any visual components\n
+        Only the board state and everything in it
+        """
+        return self._board
+
+    @board.setter
+    def board(self, value) -> None:
+        if not isinstance(value, Board):
+            raise ValueError("Board is a Board object, so it can only bet set to another Board object")
+
+        self._board = value
+
+    @property
+    def board_surface(self) -> pygame.surface.Surface:
+        """
+        Board surface to draw the board on\n
+        This is not a surface for pieces
+        """
+        return self._board_surface
+
+    @board_surface.setter
+    def board_surface(self, value):
+        if not isinstance(value, pygame.surface.Surface):
+            raise ValueError("Board surface is a Pygame Surface, so it can only be set to pygame.surface.Surface")
+
+        self._board_surface = value
 
 
 if __name__ == "__main__":

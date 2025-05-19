@@ -1,4 +1,3 @@
-import main
 from Morztypes import Vector2, Vector3
 
 
