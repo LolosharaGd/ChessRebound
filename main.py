@@ -1,5 +1,5 @@
 import pygame
-from Morztypes import Vector2, Vector3
+from Morztypes import Vector2, Vector3, can_be_used_as_vector
 from board import Board
 from pieces import Piece, Knight
 
@@ -40,6 +40,14 @@ class Main:
         self.selected_piece = 0
         self.is_piece_selected = False
 
+        self._on_board_indicators_alpha = 64
+        self.on_board_indicators_colors = [
+            (100, 200, 0, self.on_board_indicators_alpha),  # Allowed moves
+            (150, 200, 0, self.on_board_indicators_alpha),  # Selected piece
+        ]
+
+        self._click_position = Vector2()
+
         self.textures = {
             Piece.White + Piece.Knight: pygame.image.load("Textures\\KnightWhite.png"),
             Piece.Black + Piece.Knight: pygame.image.load("Textures\\KnightBlack.png")
@@ -73,6 +81,11 @@ class Main:
 
                     self.mouse_click(mouse_position, e.button)
 
+                elif e.type == pygame.MOUSEBUTTONUP:
+                    mouse_position = Vector2(e.pos)
+
+                    self.mouse_release(mouse_position, e.button)
+
             # Draw the board
             for cell_x in range(self.board.size.x):
                 for cell_y in range(self.board.size.y):
@@ -86,14 +99,20 @@ class Main:
                         # If the cell is black
                         pygame.draw.rect(self.board_surface, self.black_cell_color.unwrap(), cell_rect)
 
+            # Draw selected cell
+            selected_piece_position = self.board.pieces[self.selected_piece].position * self.board_cell_size
+            if self.is_piece_selected:
+                pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[1], selected_piece_position.unwrap() + self.board_cell_size.unwrap())
+
             # Draw the pieces
             for index, piece in enumerate(self.board.pieces):
                 piece_position = piece.position * self.board_cell_size
                 self.pieces_surface.blit(pygame.transform.scale(self.textures[piece.value], self.board_cell_size.unwrap()), piece_position.unwrap())
 
                 # Debug - draw every piece's raw moves
-                for move_position in self.bitmap_to_positions(piece.get_moves_raw(self.board.size)):
-                    pygame.draw.rect(self.board_surface, (255, 255, 0, 64), (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+                if self.is_piece_selected and index == self.selected_piece:
+                    for move_position in self.bitmap_to_positions(piece.get_moves_raw(self.board.size)):
+                        pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
 
             # Blit the surfaces
             # Outline and blit the board
@@ -111,7 +130,61 @@ class Main:
         quit("Game closed")
 
     def mouse_click(self, position, button):
-        pass
+        """
+        Global function that is called when the mouse is clicked somewhere on the screen\n
+        Calls Piece.on_click(position, on_board_position, button) function of every piece, in order that they were created\n
+        Calls Piece.clicked(button) function of a piece under the cursor when click happened instead of Piece.on_click()\n
+        Enable Piece.allow_any_and_direct_click_in_one to call both functions on a piece at the same time if it was clicked (Piece.on_click() comes first)\n
+        TODO: Make functions Piece.on_click() and Piece.clicked(), and make property Piece.allow_any_and_direct_click_in_one
+
+        :param position: Vector2 position of the click on the screen
+        :param button: Button that was pressed, 1 for left, 2 for middle and 3 for right
+        """
+
+        on_board_position = self.screen_to_board_position(position)
+        click_on_board = 0 <= on_board_position.x < self.board.size.x and 0 <= on_board_position.y < self.board.size.y
+
+        self.click_position = position
+
+        for index, piece in enumerate(self.board.pieces):
+            # if piece.position != on_board_position or piece.allow_any_and_direct_click_in_one:
+            #   piece.on_click(position, on_board_position, button)
+
+            if piece.position == on_board_position:
+                #piece.clicked(button)
+
+                pass
+
+    def mouse_release(self, position, button):
+        """
+        Global function that is called when the mouse is released somewhere on the screen\n
+        Calls Piece.on_click_release(position, on_board_position, button) function of every piece, in order that they were created\n
+        Calls Piece.click_released(button) function of a piece under the cursor when release happened instead of Piece.on_click_release()\n
+        BUT it calls Piece.click_released(button) only if the piece was the one clicked before\n
+        Enable Piece.allow_any_and_direct_click_in_one to call both functions on a piece at the same time if it was clicked (Piece.on_click_release() comes first)\n
+        TODO: Make functions Piece.on_click_release() and Piece.click_released()
+
+        :param position: Vector2 position of the release point on the screen
+        :param button: Button that was released, 1 for left, 2 for middle and 3 for right
+        """
+
+        on_board_position = self.screen_to_board_position(position)
+        click_on_board = 0 <= on_board_position.x < self.board.size.x and 0 <= on_board_position.y < self.board.size.y
+
+        if button == 3:
+            self.is_piece_selected = False
+
+        for index, piece in enumerate(self.board.pieces):
+            #if piece.position != on_board_position or piece.allow_any_and_direct_click_in_one:
+            #   piece.on_click_release(position, on_board_position, button)
+
+            if piece.position == on_board_position:
+                if self.board_click_position == on_board_position:
+                    #piece.click_released(button)
+
+                    if button == 1:
+                        self.is_piece_selected = not self.is_piece_selected
+                        self.selected_piece = index
 
     def bitmap_to_positions(self, bitmap) -> list[Vector2]:
         """
@@ -130,6 +203,58 @@ class Main:
 
         return positions
 
+    def screen_to_board_position(self, position) -> Vector2:
+        """
+        Shorthand for (position - self.board_position) // self.board_cell_size\n
+        :param position: Vector2 position on the screen
+        :return: Vector2 position on the board
+        """
+
+        return (position - self.board_position) // self.board_cell_size
+
+    def change_board_size(self, entire_board_size=None, single_cell_size=None, relative=True):
+        """
+        Method for changing the board size, single cell and entire board
+        :param relative: Is change relative to previous values, True by default
+        :param entire_board_size: Vector2 entire board size in cells
+        :param single_cell_size: Vector2 single cell size in pixels
+        """
+
+        if entire_board_size is not None:
+            self.board.size = Vector2(entire_board_size) if not relative else self.board.size + Vector2(entire_board_size)
+        if single_cell_size is not None:
+            self.board_cell_size = Vector2(single_cell_size) if not relative else self.board_cell_size + Vector2(single_cell_size)
+
+        self.board_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
+
+        self.pieces_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
+
+        self.board_surface.fill(self.background_color.unwrap())
+        self.pieces_surface.fill((0, 0, 0, 0))
+
+    @property
+    def click_position(self) -> Vector2:
+        """
+        Last click position on the screen
+        """
+
+        return self._click_position
+
+    @click_position.setter
+    def click_position(self, value):
+        if not can_be_used_as_vector(value):
+            raise ValueError("Click position is Vector2, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
+
+        self._click_position = Vector2(value)
+
+    @property
+    def board_click_position(self) -> Vector2:
+        """
+        Last click position on the board
+        """
+
+        return self.screen_to_board_position(self.click_position)
+
     @property
     def window_resolution(self) -> Vector2:
         """
@@ -139,7 +264,7 @@ class Main:
 
     @window_resolution.setter
     def window_resolution(self, value) -> None:
-        if not Vector3.can_be_used(value):
+        if not can_be_used_as_vector(value):
             raise ValueError("Window resolution is Vector2, so it can only bet set to int, float, Vector2, Vector3, list, tuple and set")
         self._window_resolution = Vector2(value)
 
@@ -233,7 +358,7 @@ class Main:
 
     @background_color.setter
     def background_color(self, value) -> None:
-        if not Vector3.can_be_used(value):
+        if not can_be_used_as_vector(value):
             raise ValueError("Background color is a Vector3, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
         self._background_color = Vector3(value)
 
@@ -278,7 +403,7 @@ class Main:
 
     @board_cell_size.setter
     def board_cell_size(self, value):
-        if not Vector2.can_be_used(value):
+        if not can_be_used_as_vector(value):
             raise ValueError("Board cell size is a Vector2, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
 
         self._board_cell_size = value
@@ -292,7 +417,7 @@ class Main:
 
     @white_cell_color.setter
     def white_cell_color(self, value) -> None:
-        if not Vector3.can_be_used(value):
+        if not can_be_used_as_vector(value):
             raise ValueError("White cell color is a Vector3, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
         self._white_cell_color = Vector3(value)
 
@@ -305,7 +430,7 @@ class Main:
 
     @black_cell_color.setter
     def black_cell_color(self, value) -> None:
-        if not Vector3.can_be_used(value):
+        if not can_be_used_as_vector(value):
             raise ValueError("Black cell color is a Vector3, so it can only be set to int, float, Vector2, Vector3, list, tuple and set")
         self._black_cell_color = Vector3(value)
 
@@ -318,7 +443,7 @@ class Main:
 
     @board_position.setter
     def board_position(self, value) -> None:
-        if not Vector3.can_be_used(value):
+        if not can_be_used_as_vector(value):
             raise ValueError("Board position is Vector2, so it can only bet set to int, float, Vector2, Vector3, list, tuple and set")
         self._board_position = Vector2(value)
 
@@ -352,6 +477,19 @@ class Main:
             raise ValueError("Board surface is a Pygame Surface, so it can only be set to pygame.surface.Surface")
 
         self._board_surface = value
+
+    @property
+    def on_board_indicators_alpha(self) -> float:
+        """
+        Alpha channel of on-board indicators (like allowed moves, selected piece etc.)
+        """
+        return self._on_board_indicators_alpha
+
+    @on_board_indicators_alpha.setter
+    def on_board_indicators_alpha(self, value) -> None:
+        if not type(value) in [int, float]:
+            raise ValueError("On board indicators alpha is float, so it can only bet set to int and float")
+        self._on_board_indicators_alpha = value
 
 
 if __name__ == "__main__":
