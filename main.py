@@ -138,7 +138,6 @@ class Main:
         Calls Piece.on_click(position, on_board_position, button) function of every piece, in order that they were created\n
         Calls Piece.clicked(button) function of a piece under the cursor when click happened instead of Piece.on_click()\n
         Enable Piece.allow_any_and_direct_click_in_one to call both functions on a piece at the same time if it was clicked (Piece.on_click() comes first)\n
-        TODO: Make functions Piece.on_click() and Piece.clicked(), and make property Piece.allow_any_and_direct_click_in_one
 
         :param position: Vector2 position of the click on the screen
         :param button: Button that was pressed, 1 for left, 2 for middle and 3 for right
@@ -150,11 +149,11 @@ class Main:
         self.click_position = position
 
         for index, piece in enumerate(self.board.pieces):
-            # if piece.position != on_board_position or piece.allow_any_and_direct_click_in_one:
-            #   piece.on_click(position, on_board_position, button)
+            if piece.position != on_board_position or piece.allow_any_and_direct_click_in_one:
+                piece.on_click(position, on_board_position, button)
 
             if piece.position == on_board_position:
-                #piece.clicked(button)
+                piece.clicked(button)
 
                 pass
 
@@ -165,7 +164,6 @@ class Main:
         Calls Piece.click_released(button) function of a piece under the cursor when release happened instead of Piece.on_click_release()\n
         BUT it calls Piece.click_released(button) only if the piece was the one clicked before\n
         Enable Piece.allow_any_and_direct_click_in_one to call both functions on a piece at the same time if it was clicked (Piece.on_click_release() comes first)\n
-        TODO: Make functions Piece.on_click_release() and Piece.click_released()
 
         :param position: Vector2 position of the release point on the screen
         :param button: Button that was released, 1 for left, 2 for middle and 3 for right
@@ -186,12 +184,12 @@ class Main:
 
         # Go through all pieces
         for index, piece in enumerate(self.board.pieces):
-            #if piece.position != on_board_position or piece.allow_any_and_direct_click_in_one:
-            #   piece.on_click_release(position, on_board_position, button)
+            if piece.position != on_board_position or piece.allow_any_and_direct_click_in_one:
+                piece.on_click_release(position, on_board_position, button)
 
             if piece.position == on_board_position:
                 if on_same_place:
-                    #piece.click_released(button)
+                    piece.click_released(button)
 
                     # If piece is clicked, select it
                     if button == 1:

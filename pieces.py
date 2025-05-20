@@ -25,6 +25,7 @@ class Piece:
         self.value = self.White if is_white else self.Black
         self.position = Vector2(position)
         self.relative_moves = []
+        self.allow_any_and_direct_click_in_one = True
 
     @property
     def is_white(self) -> bool:
@@ -81,6 +82,18 @@ class Piece:
         """
 
         return self.position_to_bit(self.position, board_size)
+
+    def on_click(self, position, on_board_position, button):
+        pass
+
+    def clicked(self, button):
+        pass
+
+    def on_click_release(self, position, on_board_position, button):
+        pass
+
+    def click_released(self, button):
+        pass
 
 
 class Knight(Piece):
