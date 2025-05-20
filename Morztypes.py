@@ -37,14 +37,20 @@ class Vector2:
     def unwrap(self, to_tuple=False):
         return [self.x, self.y] if not to_tuple else (self.x, self.y)
 
+    @property
     def normalized(self):
         return self / len(self)
 
+    @property
     def length(self):
         return math.sqrt(self.x ** 2 + self.y ** 2)
 
     def lerped_to(self, v2, t):
         return Vector2(v2) * t + self * (1 - t)
+
+    @property
+    def area(self):
+        return self.x * self.y
 
     def __len__(self):
         return math.sqrt(self.x ** 2 + self.y ** 2)
@@ -147,6 +153,21 @@ class Vector3:
 
     def unwrap(self):
         return [self.x, self.y, self.z]
+
+    @property
+    def normalized(self):
+        return self / len(self)
+
+    @property
+    def length(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+
+    def lerped_to(self, v3, t):
+        return Vector3(v3) * t + self * (1 - t)
+
+    @property
+    def volume(self):
+        return self.x * self.y * self.z
 
     def __len__(self):
         return math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
