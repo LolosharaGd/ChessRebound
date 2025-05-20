@@ -40,10 +40,12 @@ class Main:
         self.selected_piece = 0
         self.is_piece_selected = False
 
+        self.selected_legal_moves_bitmap = 0
+
         self._on_board_indicators_alpha = 64
         self.on_board_indicators_colors = [
-            (100, 200, 0, self.on_board_indicators_alpha),  # Allowed moves
-            (150, 200, 0, self.on_board_indicators_alpha),  # Selected piece
+            [100, 200, 0, self.on_board_indicators_alpha],  # Allowed moves
+            [150, 200, 0, self.on_board_indicators_alpha],  # Selected piece
         ]
 
         self._click_position = Vector2()
@@ -62,6 +64,7 @@ class Main:
         pygame.display.set_caption("Chess Rebound")
 
         self.board.pieces.append(Knight(Vector2(2, 3), True))
+        self.board.pieces.append(Knight(Vector2(3, 1), True))
 
         while True:
             self.display.fill(self.background_color.unwrap())
@@ -104,15 +107,15 @@ class Main:
             if self.is_piece_selected:
                 pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[1], selected_piece_position.unwrap() + self.board_cell_size.unwrap())
 
+            # Draw selected legal moves
+            if self.is_piece_selected:
+                for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
+                    pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+
             # Draw the pieces
             for index, piece in enumerate(self.board.pieces):
                 piece_position = piece.position * self.board_cell_size
                 self.pieces_surface.blit(pygame.transform.scale(self.textures[piece.value], self.board_cell_size.unwrap()), piece_position.unwrap())
-
-                # Debug - draw every piece's raw moves
-                if self.is_piece_selected and index == self.selected_piece:
-                    for move_position in self.bitmap_to_positions(piece.get_moves_raw(self.board.size)):
-                        pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
 
             # Blit the surfaces
             # Outline and blit the board
@@ -171,20 +174,41 @@ class Main:
         on_board_position = self.screen_to_board_position(position)
         click_on_board = 0 <= on_board_position.x < self.board.size.x and 0 <= on_board_position.y < self.board.size.y
 
+        on_same_place = on_board_position == self.board_click_position
+
+        new_piece_selected = False
+
+        # Deselect all pieces
         if button == 3:
             self.is_piece_selected = False
 
+        self.is_piece_selected = False
+
+        # Go through all pieces
         for index, piece in enumerate(self.board.pieces):
             #if piece.position != on_board_position or piece.allow_any_and_direct_click_in_one:
             #   piece.on_click_release(position, on_board_position, button)
 
             if piece.position == on_board_position:
-                if self.board_click_position == on_board_position:
+                if on_same_place:
                     #piece.click_released(button)
 
+                    # If piece is clicked, select it
                     if button == 1:
-                        self.is_piece_selected = not self.is_piece_selected
+                        self.is_piece_selected = True
                         self.selected_piece = index
+                        new_piece_selected = True
+
+        if new_piece_selected:
+            if self.is_piece_selected:
+                # Set legal moves bitmap
+                self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_raw(self.board.size)
+
+                ally_pieces_bitmap = self.board.white_pieces_bitmap if self.selected_piece_object.is_white else self.board.black_pieces_bitmap
+
+                self.selected_legal_moves_bitmap &= ~ally_pieces_bitmap
+            else:
+                self.selected_legal_moves_bitmap = 0
 
     def bitmap_to_positions(self, bitmap) -> list[Vector2]:
         """
@@ -231,6 +255,14 @@ class Main:
 
         self.board_surface.fill(self.background_color.unwrap())
         self.pieces_surface.fill((0, 0, 0, 0))
+
+    @property
+    def selected_piece_object(self) -> Piece:
+        """
+        Shorthand for self.board.pieces[self.selected_piece]
+        """
+
+        return self.board.pieces[self.selected_piece]
 
     @property
     def click_position(self) -> Vector2:

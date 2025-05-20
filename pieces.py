@@ -74,6 +74,14 @@ class Piece:
 
         return (1 << pos.x) << (pos.y * bsize.x)
 
+    def self_bit_position(self, board_size) -> int:
+        """
+        Shorthand for piece.position_to_bit(piece.position, board_size)\n
+        :return: Bitmap with 1 bit that corresponds to this piece's position
+        """
+
+        return self.position_to_bit(self.position, board_size)
+
 
 class Knight(Piece):
     def __init__(self, position, is_white):
