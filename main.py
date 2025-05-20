@@ -31,7 +31,7 @@ class Main:
 
         self._board = Board(Vector2(8, 8))
 
-        self._board_surface = pygame.Surface(self.total_board_size.unwrap())
+        self._board_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
 
         self.pieces_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
 
@@ -78,6 +78,9 @@ class Main:
             for piece in self.board.pieces:
                 piece_position = piece.position * self.board_cell_size
                 self.pieces_surface.blit(pygame.transform.scale(self.textures[piece.value], self.board_cell_size.unwrap()), piece_position.unwrap())
+
+                # Debug - draw every piece's raw moves
+                print(piece.get_moves_raw(self.board.size))
 
             # Blit the surfaces
             # Outline and blit the board
