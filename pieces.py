@@ -36,13 +36,12 @@ class Piece:
 
         return self.value // self.White == 1
 
-    def get_moves_raw(self, board_size) -> int:
+    def get_moves_bitmap(self, board_size, black_pieces_bitmap, white_pieces_bitmap) -> int:
         """
-        "Raw" means other pieces, checks, pins and everything else is ignored\n
         Bitmap starts from top-left, and goes from left to right\n
         Be sure to override this method when creating a new piece\n
         If you intend on using this and a custom method, you can do something like:\n
-        bitmap = super().get_moves_raw(board_size)\n
+        bitmap = super().get_moves_bitmap(board_size)\n
         Then do some custom stuff with the bitmap and return it\n
         :return: The bitmap of all raw possible moves this piece can do
         """

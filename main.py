@@ -155,8 +155,6 @@ class Main:
             if piece.position == on_board_position:
                 piece.clicked(button)
 
-                pass
-
     def mouse_release(self, position, button):
         """
         Global function that is called when the mouse is released somewhere on the screen\n
@@ -174,13 +172,11 @@ class Main:
 
         on_same_place = on_board_position == self.board_click_position
 
-        new_piece_selected = False
+        clicked_on_any_piece = False
 
         # Deselect all pieces
         if button == 3:
             self.is_piece_selected = False
-
-        self.is_piece_selected = False
 
         # Go through all pieces
         for index, piece in enumerate(self.board.pieces):
@@ -193,20 +189,34 @@ class Main:
 
                     # If piece is clicked, select it
                     if button == 1:
-                        self.is_piece_selected = True
-                        self.selected_piece = index
-                        new_piece_selected = True
+                        # If it is the same color
+                        if piece.is_white == self.selected_piece_object.is_white or not self.is_piece_selected:
+                            clicked_on_any_piece = True
+                            self.selected_piece = index
 
-        if new_piece_selected:
-            if self.is_piece_selected:
-                # Set legal moves bitmap
-                self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_raw(self.board.size)
+        if clicked_on_any_piece:
+            # Select the piece
+            self.is_piece_selected = True
 
-                ally_pieces_bitmap = self.board.white_pieces_bitmap if self.selected_piece_object.is_white else self.board.black_pieces_bitmap
+            # Set legal moves bitmap
+            self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_bitmap(self.board.size, self.board.black_pieces_bitmap, self.board.white_pieces_bitmap)
 
-                self.selected_legal_moves_bitmap &= ~ally_pieces_bitmap
-            else:
-                self.selected_legal_moves_bitmap = 0
+            ally_pieces_bitmap = self.board.white_pieces_bitmap if self.selected_piece_object.is_white else self.board.black_pieces_bitmap
+
+            self.selected_legal_moves_bitmap &= ~ally_pieces_bitmap
+        else:
+            # Go through all legal moves of the selected piece
+            for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
+                # If clicked on one of the moves
+                if move_position == on_board_position:
+                    self.selected_piece_object.position = move_position
+
+                    # Break out of the loop checking the moves
+                    break
+
+            # Deselect the piece
+            self.is_piece_selected = False
+            self.selected_legal_moves_bitmap = 0
 
     def bitmap_to_positions(self, bitmap) -> list[Vector2]:
         """
