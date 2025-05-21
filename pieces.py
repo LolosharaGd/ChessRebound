@@ -26,6 +26,8 @@ class Piece:
         self.position = Vector2(position)
         self.relative_moves = []
         self.allow_any_and_direct_click_in_one = True
+        self.can_capture_allies = False
+        self.can_capture_enemies = True
 
     @property
     def is_white(self) -> bool:
@@ -50,6 +52,15 @@ class Piece:
 
         for move in self.relative_moves:
             bitmap += self.position_to_bit(self.position + move, board_size)
+
+        ally_pieces_bitmap = white_pieces_bitmap if self.is_white else black_pieces_bitmap
+        enemy_pieces_bitmap = white_pieces_bitmap if not self.is_white else black_pieces_bitmap
+
+        if not self.can_capture_allies:
+            bitmap &= ~ally_pieces_bitmap
+
+        if not self.can_capture_enemies:
+            bitmap &= ~enemy_pieces_bitmap
 
         return bitmap
 
@@ -83,16 +94,52 @@ class Piece:
         return self.position_to_bit(self.position, board_size)
 
     def on_click(self, position, on_board_position, button):
+        """
+        Function automatically called when click has happened somewhere on the screen\n
+        This function is not called when the piece is clicked if self.allow_any_and_direct_click_in_one is False
+        :param on_board_position: Position of the click on the board in cells
+        :param position: Position of the click on the screen in pixels
+        :param button: Button index that was pressed. 1, 2 and 3 for left, middle and right respectively
+        """
+
         pass
 
     def clicked(self, button):
+        """
+        Function automatically called when the piece is clicked
+        :param button: Button index that was pressed. 1, 2 and 3 for left, middle and right respectively
+        """
+
         pass
 
     def on_click_release(self, position, on_board_position, button):
+        """
+        Function automatically called when click is released somewhere on the screen\n
+        This function is not called when the piece is released if self.allow_any_and_direct_click_in_one is False\n
+        :param on_board_position: Position of the click on the board in cells
+        :param position: Position of the click on the screen in pixels
+        :param button: Button index that was pressed. 1, 2 and 3 for left, middle and right respectively
+        """
+
         pass
 
     def click_released(self, button):
+        """
+        Function automatically called when the piece is released
+        :param button: Button index that was pressed. 1, 2 and 3 for left, middle and right respectively
+        """
+
         pass
+
+    def on_captured(self, source_piece, forced_capture) -> bool:
+        """
+        Function automatically called when the piece is captured by another piece\n
+        :param source_piece: The piece that tried to capture this piece
+        :param forced_capture: True if the capture is forced. Can be used if the piece is destroying the piece trying to capture it
+        :return: True to allow this piece to get removed. False to not remove the piece, recommended to call another piece's Piece.on_captured(self, True) so two pieces do not end up on one spot
+        """
+
+        return True or forced_capture
 
 
 class Knight(Piece):

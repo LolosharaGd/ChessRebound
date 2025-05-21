@@ -64,7 +64,7 @@ class Main:
         pygame.display.set_caption("Chess Rebound")
 
         self.board.pieces.append(Knight(Vector2(2, 3), True))
-        self.board.pieces.append(Knight(Vector2(3, 1), True))
+        self.board.pieces.append(Knight(Vector2(3, 1), False))
 
         while True:
             self.display.fill(self.background_color.unwrap())
@@ -200,10 +200,6 @@ class Main:
 
             # Set legal moves bitmap
             self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_bitmap(self.board.size, self.board.black_pieces_bitmap, self.board.white_pieces_bitmap)
-
-            ally_pieces_bitmap = self.board.white_pieces_bitmap if self.selected_piece_object.is_white else self.board.black_pieces_bitmap
-
-            self.selected_legal_moves_bitmap &= ~ally_pieces_bitmap
         else:
             # Go through all legal moves of the selected piece
             for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
