@@ -1,7 +1,8 @@
 import pygame
 from Morztypes import Vector2, Vector3, can_be_used_as_vector
 from board import Board
-from pieces import Piece, Knight
+from pieces import Piece, Knight, PieceTypes, register_piece
+import global_vars
 
 pygame.init()
 
@@ -49,11 +50,6 @@ class Main:
         ]
 
         self._click_position = Vector2()
-
-        self.textures = {
-            Piece.White + Piece.Knight: pygame.image.load("Textures\\KnightWhite.png"),
-            Piece.Black + Piece.Knight: pygame.image.load("Textures\\KnightBlack.png")
-        }
 
     def run(self):
         """
@@ -115,7 +111,7 @@ class Main:
             # Draw the pieces
             for index, piece in enumerate(self.board.pieces):
                 piece_position = piece.position * self.board_cell_size
-                self.pieces_surface.blit(pygame.transform.scale(self.textures[piece.value], self.board_cell_size.unwrap()), piece_position.unwrap())
+                self.pieces_surface.blit(pygame.transform.scale(global_vars.TEXTURES[piece.value], self.board_cell_size.unwrap()), piece_position.unwrap())
 
             # Blit the surfaces
             # Outline and blit the board
@@ -529,5 +525,5 @@ class Main:
 
 
 if __name__ == "__main__":
-    game = Main(Vector2(1920, 1080), 120)
+    game = Main(Vector2(global_vars.WINDOW_WIDTH, global_vars.WINDOW_HEIGHT), global_vars.FPS)
     game.run()

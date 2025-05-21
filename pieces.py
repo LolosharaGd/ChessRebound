@@ -1,23 +1,44 @@
+import pygame
 from Morztypes import Vector2, Vector3
+import global_vars
+
+PieceTypes = {}
+# Up to 64 pieces!
+# Including base ones
+
+
+def register_piece(name):
+    """
+    Registers the piece type, if it was not already registered\n
+    Use PieceTypes[name of the piece type] to get the index of the piece type\n
+    Will not do anything if the 64 piece types are registered\n
+    :param name: Internal name of the piece type
+    """
+
+    if name not in PieceTypes and len(PieceTypes) < 64:
+        PieceTypes[name] = len(PieceTypes)
+
+        global_vars.TEXTURES[Piece.White + PieceTypes[name]] = pygame.image.load("Textures\\" + name + "White.png")
+        global_vars.TEXTURES[Piece.Black + PieceTypes[name]] = pygame.image.load("Textures\\" + name + "Black.png")
 
 
 class Piece:
+    """
+    Type that every piece stems from\n
+    You can read in the documentation (README.md) how to create a new piece
+    """
+
     White = 1 << 6
     Black = 1 << 7
-
-    Knight = 1
-
-    # Up to 64 pieces!
 
     def __init__(self, position, is_white):
         """
         Standard initialization function\n
         When creating a new piece, make sure to call super().__init__(position, is_white) first and then set it's self.value\n
         To properly set piece's self.value you need to:\n
-        self.value += index of your piece's type\n
+        self.self_register(name of the piece)\n
+        This will create new piece type in PieceTypes, set this piece's self.value and self.name\n
         You can use self.relative_moves to easily set moves that jump over other pieces\n
-        TODO: Make creating custom piece type indexes easy
-
         :param position: Vector2 initial position of the piece on the board
         :param is_white: True if the piece is white, false if the piece is black
         """
@@ -28,6 +49,7 @@ class Piece:
         self.allow_any_and_direct_click_in_one = True
         self.can_capture_allies = False
         self.can_capture_enemies = True
+        self.name = ""
 
     @property
     def is_white(self) -> bool:
@@ -141,12 +163,17 @@ class Piece:
 
         return True or forced_capture
 
+    def self_register(self, name):
+        self.name = name
+        register_piece(self.name)
+        self.value += PieceTypes[self.name]
+
 
 class Knight(Piece):
     def __init__(self, position, is_white):
         super().__init__(position, is_white)
 
-        self.value += self.Knight
+        self.self_register("Knight")
 
         self.relative_moves = [
             Vector2(1, -2),

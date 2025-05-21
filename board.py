@@ -1,5 +1,5 @@
 from Morztypes import Vector2, Vector3
-from pieces import Piece, Knight
+from pieces import Piece, Knight, PieceTypes
 
 
 class Board:
