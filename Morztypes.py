@@ -43,21 +43,40 @@ class Vector2:
             self.y = x.y
 
     def unwrap(self, to_tuple=False):
+        """
+        :param to_tuple: Does the result need to be tuple
+        :return: List (or tuple) of x and y of this Vector2
+        """
         return [self.x, self.y] if not to_tuple else (self.x, self.y)
 
     @property
     def normalized(self):
+        """
+        :return: This Vector2 divided by its length
+        """
         return self / len(self)
 
     @property
     def length(self):
+        """
+        :return: Lenght of this Vector2
+        """
         return math.sqrt(self.x ** 2 + self.y ** 2)
 
     def lerped_to(self, v2, t):
+        """
+        Shorthand for Vector2(second_vector2) * t + this_vector2 * (1 - t)
+        :param v2: Second Vector2 to lerp to
+        :param t: Progress of lerping. 0 returns this Vector2, and 1 returns second Vector2
+        :return:
+        """
         return Vector2(v2) * t + self * (1 - t)
 
     @property
     def area(self):
+        """
+        :return: Area of this vector2, x multiplied by y
+        """
         return self.x * self.y
 
     def __len__(self):
@@ -155,22 +174,41 @@ class Vector3:
             self.y = x.y
             self.z = x.z
 
-    def unwrap(self):
-        return [self.x, self.y, self.z]
+    def unwrap(self, to_tuple=False):
+        """
+        :param to_tuple: Does the result need to be tuple
+        :return: List (or tuple) of x, y and z of this Vector3
+        """
+        return [self.x, self.y, self.z] if not to_tuple else (self.x, self.y, self.z)
 
     @property
     def normalized(self):
+        """
+        :return: This Vector3 divided by its length
+        """
         return self / len(self)
 
     @property
     def length(self):
+        """
+        :return: Length of this Vector3
+        """
         return math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
 
     def lerped_to(self, v3, t):
+        """
+        Shorthand for Vector3(second_vector3) * t + this_vector3 * (1 - t)
+        :param v2: Second Vector3 to lerp to
+        :param t: Progress of lerping. 0 returns this Vector3, and 1 returns second Vector3
+        :return:
+        """
         return Vector3(v3) * t + self * (1 - t)
 
     @property
     def volume(self):
+        """
+        :return: Volume of this Vector3, x * y * z
+        """
         return self.x * self.y * self.z
 
     def __len__(self):

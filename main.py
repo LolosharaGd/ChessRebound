@@ -197,7 +197,14 @@ class Main:
             self.is_piece_selected = True
 
             # Set legal moves bitmap
-            self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_bitmap(self.board.size, self.board.black_pieces_bitmap, self.board.white_pieces_bitmap)
+            get_moves_args = [
+                self.board.size,
+                self.board.black_pieces_bitmap,
+                self.board.white_pieces_bitmap,
+                self.board.black_pieces,
+                self.board.white_pieces
+            ]
+            self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_bitmap(*get_moves_args)
         else:
             # Go through all legal moves of the selected piece
             for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
@@ -214,7 +221,7 @@ class Main:
 
     def bitmap_to_positions(self, bitmap) -> list[Vector2]:
         """
-        Use this to convert bitmaps (like from Piece.get_moves_raw()) to a list of positions on the board
+        Use this to convert bitmaps (like from Piece.get_moes_bitmap()) to a list of positions on the board
         :param bitmap: A target bitmap, starts from top-left, and then goes like text - left-to-right and top-to-bottom
         :return: List of Vector2 positions that are on a bitmap
         """
