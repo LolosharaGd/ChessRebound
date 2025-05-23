@@ -166,7 +166,7 @@ class Piece:
 
         bitmap = 0
 
-        bitmap |= self.calculate_jumping_moves(board_size, black_pieces_bitmap, white_pieces_bitmap, self.jumping_moves)
+        bitmap |= self.calculate_jumping_moves(board_size, black_pieces_bitmap, white_pieces_bitmap)
 
         for sliding_move in self.sliding_moves:
             bitmap |= self.calculate_sliding_move(board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move)
@@ -212,7 +212,7 @@ class Piece:
 
         bitmap = 0
 
-        for move in moves:
+        for move in _moves:
             bitmap += self.calculate_jumping_move(board_size, black_pieces_bitmap, white_pieces_bitmap, move)
 
         return bitmap
@@ -392,12 +392,13 @@ class Piece:
 
         pass
 
-    def on_captured(self, source_piece, forced_capture) -> bool:
+    def on_captured(self, source_piece, forced_capture=False) -> bool:
         """
         Function automatically called when the piece is captured by another piece\n
+        If forced_capture is True, then the piece will get removed regardless of the return\n
         :param source_piece: The piece that tried to capture this piece
-        :param forced_capture: True if the capture is forced. Can be used if the piece is destroying the piece trying to capture it
-        :return: True to allow this piece to get removed. False to not remove the piece, recommended to call another piece's Piece.on_captured(self, True) so two pieces do not end up on one spot
+        :param forced_capture: True if the capture is forced. Generally True when the piece is getting captured back by a piece it's trying to capture
+        :return: True to allow this piece to get removed. False to not remove the piece and remove the piece that tried to capture instead
         """
 
         return True or forced_capture
@@ -414,7 +415,7 @@ class Knight(Piece):
 
         self.self_register("Knight")
 
-        self.relative_moves = [
+        self.jumping_moves = [
             Vector2(1, -2),
             Vector2(2, -1),
             Vector2(2, 1),

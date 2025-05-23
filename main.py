@@ -49,6 +49,7 @@ class Main:
         self.on_board_indicators_colors = [
             [100, 200, 0, self.on_board_indicators_alpha],  # Allowed moves
             [150, 200, 0, self.on_board_indicators_alpha],  # Selected piece
+            [200, 100, 0, self.on_board_indicators_alpha],  # Piece that can be captured
         ]
 
         self._click_position = Vector2()
@@ -108,7 +109,20 @@ class Main:
             # Draw selected legal moves
             if self.is_piece_selected:
                 for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
-                    pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+                    piece_on_cell = self.board.get_piece_at(move_position)
+
+                    if piece_on_cell is None:
+                        # Draw normal if there are no pieces here
+                        pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+                    else:
+                        # Draw other if there is a piece here
+                        pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[2], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+
+            # # !!!Debug!!!
+            # for x in range(self.board.size.x):
+            #     for y in range(self.board.size.y):
+            #         if self.board.get_piece_at(Vector2(x, y)) is not None:
+            #             pygame.draw.rect(self.board_surface, (100, 100, 100, 100), (Vector2(x, y) * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
 
             # Draw the pieces
             for index, piece in enumerate(self.board.pieces):
@@ -210,6 +224,33 @@ class Main:
             for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
                 # If clicked on one of the moves
                 if move_position == on_board_position:
+                    # Get piece to capture
+                    piece_captured = self.board.get_piece_at(move_position)
+
+                    if piece_captured is not None:
+                        # Call Piece.on_captured() if there is a piece
+                        allow_to_capture = piece_captured.on_captured(self.selected_piece_object)
+
+                        if allow_to_capture:
+                            selected_piece = self.selected_piece_object
+
+                            # Remove the captured piece
+                            self.board.pieces.remove(piece_captured)
+
+                            # Recalculate index of selected piece
+                            self.selected_piece = self.board.pieces.index(selected_piece)
+                        else:
+                            # Call Piece.on_captured on selected piece
+                            self.selected_piece_object.on_captured(piece_captured, True)
+
+                            # Remove the selected piece
+                            self.board.pieces.remove(self.selected_piece_object)
+                            self.is_piece_selected = False
+
+                            # Break out of the loop checking the moves
+                            break
+
+                    # Move the piece
                     self.selected_piece_object.position = move_position
 
                     # Break out of the loop checking the moves
