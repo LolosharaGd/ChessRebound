@@ -1,7 +1,7 @@
 import pygame
 from Morztypes import Vector2, Vector3, can_be_used_as_vector
 from board import Board
-from pieces import Piece, Knight, Rook, PieceTypes, register_piece
+from pieces import Piece, Knight, Rook, Bishop, Queen, PieceTypes, register_piece
 import global_vars
 from custom_pieces import *
 # Sorry, I have to do the "from X import *" thing, because I don't know what will actually be in there and I don't want to make creating a new piece harder than it already is
@@ -64,11 +64,32 @@ class Main:
         pygame.display.set_icon(self.icon)
         pygame.display.set_caption("Chess Rebound")
 
-        self.board.pieces.append(Knight(Vector2(2, 3), True))
-        self.board.pieces.append(Knight(Vector2(3, 1), False))
+        # RNBQKBNR
+        # PPPPPPPP
+        #
+        #
+        #
+        #
+        # pppppppp
+        # rnbqkbnr
 
-        self.board.pieces.append(Rook(Vector2(5, 3), True))
-        self.board.pieces.append(Rook(Vector2(6, 1), False))
+        self.board.pieces.append(Knight(Vector2(1, 7), True))
+        self.board.pieces.append(Knight(Vector2(6, 7), True))
+        self.board.pieces.append(Knight(Vector2(1, 0), False))
+        self.board.pieces.append(Knight(Vector2(6, 0), False))
+
+        self.board.pieces.append(Rook(Vector2(0, 7), True))
+        self.board.pieces.append(Rook(Vector2(7, 7), True))
+        self.board.pieces.append(Rook(Vector2(0, 0), False))
+        self.board.pieces.append(Rook(Vector2(7, 0), False))
+
+        self.board.pieces.append(Bishop(Vector2(2, 7), True))
+        self.board.pieces.append(Bishop(Vector2(5, 7), True))
+        self.board.pieces.append(Bishop(Vector2(2, 0), False))
+        self.board.pieces.append(Bishop(Vector2(5, 0), False))
+
+        self.board.pieces.append(Queen(Vector2(3, 7), True))
+        self.board.pieces.append(Queen(Vector2(3, 0), False))
 
         while True:
             self.display.fill(self.background_color.unwrap())
@@ -228,45 +249,46 @@ class Main:
             ]
             self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_bitmap(*get_moves_args)
         else:
-            # Go through all legal moves of the selected piece
-            for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
-                # If clicked on one of the moves
-                if move_position == on_board_position:
-                    # Get piece to capture
-                    piece_captured = self.board.get_piece_at(move_position)
+            if button == 1:
+                # Go through all legal moves of the selected piece
+                for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
+                    # If clicked on one of the moves
+                    if move_position == on_board_position:
+                        # Get piece to capture
+                        piece_captured = self.board.get_piece_at(move_position)
 
-                    if piece_captured is not None:
-                        # Call Piece.on_captured() if there is a piece
-                        allow_to_capture = piece_captured.on_captured(self.selected_piece_object)
+                        if piece_captured is not None:
+                            # Call Piece.on_captured() if there is a piece
+                            allow_to_capture = piece_captured.on_captured(self.selected_piece_object)
 
-                        if allow_to_capture:
-                            selected_piece = self.selected_piece_object
+                            if allow_to_capture:
+                                selected_piece = self.selected_piece_object
 
-                            # Remove the captured piece
-                            self.board.pieces.remove(piece_captured)
+                                # Remove the captured piece
+                                self.board.pieces.remove(piece_captured)
 
-                            # Recalculate index of selected piece
-                            self.selected_piece = self.board.pieces.index(selected_piece)
-                        else:
-                            # Call Piece.on_captured on selected piece
-                            self.selected_piece_object.on_captured(piece_captured, True)
+                                # Recalculate index of selected piece
+                                self.selected_piece = self.board.pieces.index(selected_piece)
+                            else:
+                                # Call Piece.on_captured on selected piece
+                                self.selected_piece_object.on_captured(piece_captured, True)
 
-                            # Remove the selected piece
-                            self.board.pieces.remove(self.selected_piece_object)
-                            self.is_piece_selected = False
+                                # Remove the selected piece
+                                self.board.pieces.remove(self.selected_piece_object)
+                                self.is_piece_selected = False
 
-                            # Break out of the loop checking the moves
-                            break
+                                # Break out of the loop checking the moves
+                                break
 
-                    # Move the piece
-                    self.selected_piece_object.position = move_position
+                        # Move the piece
+                        self.selected_piece_object.position = move_position
 
-                    # Break out of the loop checking the moves
-                    break
+                        # Break out of the loop checking the moves
+                        break
 
-            # Deselect the piece
-            self.is_piece_selected = False
-            self.selected_legal_moves_bitmap = 0
+                # Deselect the piece
+                self.is_piece_selected = False
+                self.selected_legal_moves_bitmap = 0
 
     def bitmap_to_positions(self, bitmap) -> list[Vector2]:
         """

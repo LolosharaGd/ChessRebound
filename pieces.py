@@ -441,3 +441,35 @@ class Rook(Piece):
             SlidingMove(Vector2(), Vector2(0, 1)),
             SlidingMove(Vector2(), Vector2(-1, 0)),
         ]
+
+
+class Bishop(Piece):
+    def __init__(self, position, is_white):
+        super().__init__(position, is_white)
+
+        self.self_register("Bishop")
+
+        self.sliding_moves = [
+            SlidingMove(Vector2(), Vector2(1, -1)),
+            SlidingMove(Vector2(), Vector2(1, 1)),
+            SlidingMove(Vector2(), Vector2(-1, 1)),
+            SlidingMove(Vector2(), Vector2(-1, -1)),
+        ]
+
+
+class Queen(Piece):
+    def __init__(self, position, is_white):
+        super().__init__(position, is_white)
+
+        self.self_register("Queen")
+
+        self.sliding_moves = [
+            SlidingMove(Vector2(), Vector2(0, -1)),
+            SlidingMove(Vector2(), Vector2(1, 0)),
+            SlidingMove(Vector2(), Vector2(0, 1)),
+            SlidingMove(Vector2(), Vector2(-1, 0)),
+            SlidingMove(Vector2(), Vector2(1, -1)),
+            SlidingMove(Vector2(), Vector2(1, 1)),
+            SlidingMove(Vector2(), Vector2(-1, 1)),
+            SlidingMove(Vector2(), Vector2(-1, -1)),
+        ]
