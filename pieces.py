@@ -229,37 +229,39 @@ class Piece:
 
         bitmap = 0
 
-        move_position = self.position + sliding_move.step
-
-        if starting_relative_position is not None:
-            # Starting position of the move with one move already done, so the piece that moves does not interfere, "cursor"
-            move_position = sliding_move.start
+        move_position = self.position + sliding_move.start
 
         # Bitmap of all pieces, made by ORing bitmaps of black and white pieces
         # Not adding them, because if for some reason two pieces end up on the same square, everything will go terribly wrong
         all_pieces_bitmap = black_pieces_bitmap | white_pieces_bitmap
 
-        # Variable, that will help determine if the "cursor" hit any piece, or just moved out of the board
+        # Variable, that will help determine if the cursor hit any piece, or just moved out of the board
         out_of_the_board = False
 
+        cell_under_the_cursor = 0
+
         # While move is on empty cell
-        while not self.position_in_bitmap(all_pieces_bitmap, move_position, board_size):
-            # The bit of cell under the "cursor", it is None if there is no cell under the "cursor"
+        while move_position.inside_of(board_size):
+            # Move the cursor
+            move_position += sliding_move.step
+
+            # The bit of cell under the cursor, it is None if there is no cell under the cursor
             cell_under_the_cursor = self.position_to_bit(move_position, board_size)
 
-            # Break out of the loop, if there is no cell under the "cursor"
+            # Break out of the loop, if there is no cell under the cursor
             if cell_under_the_cursor is None:
                 out_of_the_board = True
                 break
 
-            # If there is a cell under the "cursor"
-            # Add the place under the "cursor" to moves bitmap by ORing (again, not adding, it is safer and faster to OR them)
+            # If there is a piece under the cursor
+            if all_pieces_bitmap & cell_under_the_cursor != 0:
+                break
+
+            # If there is a cell under the cursor
+            # Add the place under the cursor to moves bitmap by ORing (again, not adding, it is safer and faster to OR them)
             bitmap |= cell_under_the_cursor
 
-            # Move the "cursor"
-            move_position += sliding_move.step
-
-        # If the "cursor" hit a piece, instead of moving out of the board
+        # If the cursor hit a piece, instead of moving out of the board
         if not out_of_the_board:
             # Variable, that will help determine if the piece that got hit by the move is white
             hit_white_piece = self.position_in_bitmap(white_pieces_bitmap, move_position, board_size)
@@ -290,10 +292,7 @@ class Piece:
         pos = Vector2(position)
         bsize = Vector2(board_size)
 
-        if pos.x < 0 or pos.x >= bsize.x:
-            return 0
-
-        if pos.y < 0 or pos.y >= bsize.y:
+        if not pos.inside_of(bsize):
             return 0
 
         return (1 << pos.x) << (pos.y * bsize.x)
@@ -340,11 +339,14 @@ class Piece:
         :param board_size: The size of the board
         :param bitmap: The bitmap to take position from
         :param position: Vector2 position, from top-left
-        :return: True if there is 1 in the bitmap in target position, False if not
+        :return: True if there is 1 in the bitmap in target position, False if not or the position is out of the board
         """
 
+        if not position.inside_of(board_size):
+            return False
+
         bit = (bitmap >> position.x) >> (position.y * board_size.x)
-        return bit == 1
+        return bit % 2 == 1
 
     def self_bit_position(self, board_size) -> int:
         """
@@ -424,4 +426,18 @@ class Knight(Piece):
             Vector2(-2, 1),
             Vector2(-2, -1),
             Vector2(-1, -2)
+        ]
+
+
+class Rook(Piece):
+    def __init__(self, position, is_white):
+        super().__init__(position, is_white)
+
+        self.self_register("Rook")
+
+        self.sliding_moves = [
+            SlidingMove(Vector2(), Vector2(0, -1)),
+            SlidingMove(Vector2(), Vector2(1, 0)),
+            SlidingMove(Vector2(), Vector2(0, 1)),
+            SlidingMove(Vector2(), Vector2(-1, 0)),
         ]

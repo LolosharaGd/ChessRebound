@@ -1,7 +1,7 @@
 import pygame
 from Morztypes import Vector2, Vector3, can_be_used_as_vector
 from board import Board
-from pieces import Piece, Knight, PieceTypes, register_piece
+from pieces import Piece, Knight, Rook, PieceTypes, register_piece
 import global_vars
 from custom_pieces import *
 # Sorry, I have to do the "from X import *" thing, because I don't know what will actually be in there and I don't want to make creating a new piece harder than it already is
@@ -38,6 +38,8 @@ class Main:
 
         self._board_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
 
+        self.board_indicator_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
+
         self.pieces_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
 
         self.selected_piece = 0
@@ -47,9 +49,9 @@ class Main:
 
         self._on_board_indicators_alpha = 64
         self.on_board_indicators_colors = [
-            [100, 200, 0, self.on_board_indicators_alpha],  # Allowed moves
-            [150, 200, 0, self.on_board_indicators_alpha],  # Selected piece
-            [200, 100, 0, self.on_board_indicators_alpha],  # Piece that can be captured
+            [100, 200, 0],  # Allowed moves
+            [150, 200, 0],  # Selected piece
+            [200, 100, 0],  # Piece that can be captured
         ]
 
         self._click_position = Vector2()
@@ -65,10 +67,15 @@ class Main:
         self.board.pieces.append(Knight(Vector2(2, 3), True))
         self.board.pieces.append(Knight(Vector2(3, 1), False))
 
+        self.board.pieces.append(Rook(Vector2(5, 3), True))
+        self.board.pieces.append(Rook(Vector2(6, 1), False))
+
         while True:
             self.display.fill(self.background_color.unwrap())
             self.board_surface.fill(self.background_color.unwrap())
             self.pieces_surface.fill((0, 0, 0, 0))
+            self.board_indicator_surface.set_alpha(self.on_board_indicators_alpha)
+            self.board_indicator_surface.fill((0, 0, 0, 0))
 
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
@@ -104,7 +111,7 @@ class Main:
             # Draw selected cell
             selected_piece_position = self.board.pieces[self.selected_piece].position * self.board_cell_size
             if self.is_piece_selected:
-                pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[1], selected_piece_position.unwrap() + self.board_cell_size.unwrap())
+                pygame.draw.rect(self.board_indicator_surface, self.on_board_indicators_colors[1], selected_piece_position.unwrap() + self.board_cell_size.unwrap())
 
             # Draw selected legal moves
             if self.is_piece_selected:
@@ -113,16 +120,16 @@ class Main:
 
                     if piece_on_cell is None:
                         # Draw normal if there are no pieces here
-                        pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+                        pygame.draw.rect(self.board_indicator_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
                     else:
                         # Draw other if there is a piece here
-                        pygame.draw.rect(self.board_surface, self.on_board_indicators_colors[2], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+                        pygame.draw.rect(self.board_indicator_surface, self.on_board_indicators_colors[2], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
 
             # # !!!Debug!!!
             # for x in range(self.board.size.x):
             #     for y in range(self.board.size.y):
             #         if self.board.get_piece_at(Vector2(x, y)) is not None:
-            #             pygame.draw.rect(self.board_surface, (100, 100, 100, 100), (Vector2(x, y) * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+            #             pygame.draw.rect(self.board_indicator_surface, (100, 100, 100, 100), (Vector2(x, y) * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
 
             # Draw the pieces
             for index, piece in enumerate(self.board.pieces):
@@ -134,6 +141,7 @@ class Main:
             board_outline_position = self.board_position - Vector2(20)
             board_outline_rect = board_outline_position.unwrap() + (self.total_board_size + Vector2(40)).unwrap()
             pygame.draw.rect(self.display, self.color_palette[2].unwrap(), board_outline_rect)
+            self.board_surface.blit(self.board_indicator_surface, (0, 0))
             self.display.blit(self.board_surface, self.board_position.unwrap())
             # Blit the pieces
             self.display.blit(self.pieces_surface, self.board_position.unwrap())

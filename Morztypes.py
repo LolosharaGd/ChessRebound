@@ -72,6 +72,9 @@ class Vector2:
         """
         return Vector2(v2) * t + self * (1 - t)
 
+    def inside_of(self, other):
+        return 0 <= self.x < other.x and 0 <= self.y < other.y
+
     @property
     def area(self):
         """
