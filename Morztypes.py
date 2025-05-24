@@ -201,7 +201,7 @@ class Vector3:
     def lerped_to(self, v3, t):
         """
         Shorthand for Vector3(second_vector3) * t + this_vector3 * (1 - t)
-        :param v2: Second Vector3 to lerp to
+        :param v3: Second Vector3 to lerp to
         :param t: Progress of lerping. 0 returns this Vector3, and 1 returns second Vector3
         :return:
         """

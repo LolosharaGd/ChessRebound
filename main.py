@@ -1,9 +1,10 @@
 import pygame
 from Morztypes import Vector2, Vector3, can_be_used_as_vector
 from board import Board
-from pieces import Piece, Knight, Rook, Bishop, Queen, PieceTypes, register_piece
+from pieces import Piece, Knight, Rook, Bishop, Queen, King, PieceTypes, register_piece
 import global_vars
 from custom_pieces import *
+from copy import deepcopy
 # Sorry, I have to do the "from X import *" thing, because I don't know what will actually be in there and I don't want to make creating a new piece harder than it already is
 
 pygame.init()
@@ -32,7 +33,7 @@ class Main:
         self._board_cell_size = Vector2(100, 100)
         self._white_cell_color = self.color_palette[1]
         self._black_cell_color = self.color_palette[2]
-        self._board_position = Vector2(140, 140)
+        self._board_position = Vector2(560, 140)
 
         self._board = Board(Vector2(8, 8))
 
@@ -90,6 +91,9 @@ class Main:
 
         self.board.pieces.append(Queen(Vector2(3, 7), True))
         self.board.pieces.append(Queen(Vector2(3, 0), False))
+
+        self.board.pieces.append(King(Vector2(4, 7), True))
+        self.board.pieces.append(King(Vector2(4, 0), False))
 
         while True:
             self.display.fill(self.background_color.unwrap())
@@ -248,40 +252,19 @@ class Main:
                 self.board.white_pieces
             ]
             self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_bitmap(*get_moves_args)
+
+            for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
+                move_is_legal = self.fake_move_check_check(self.selected_piece_object, move_position)
+
+                if not move_is_legal:
+                    self.selected_legal_moves_bitmap &= ~self.position_to_bit(move_position)
         else:
             if button == 1:
                 # Go through all legal moves of the selected piece
                 for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
                     # If clicked on one of the moves
                     if move_position == on_board_position:
-                        # Get piece to capture
-                        piece_captured = self.board.get_piece_at(move_position)
-
-                        if piece_captured is not None:
-                            # Call Piece.on_captured() if there is a piece
-                            allow_to_capture = piece_captured.on_captured(self.selected_piece_object)
-
-                            if allow_to_capture:
-                                selected_piece = self.selected_piece_object
-
-                                # Remove the captured piece
-                                self.board.pieces.remove(piece_captured)
-
-                                # Recalculate index of selected piece
-                                self.selected_piece = self.board.pieces.index(selected_piece)
-                            else:
-                                # Call Piece.on_captured on selected piece
-                                self.selected_piece_object.on_captured(piece_captured, True)
-
-                                # Remove the selected piece
-                                self.board.pieces.remove(self.selected_piece_object)
-                                self.is_piece_selected = False
-
-                                # Break out of the loop checking the moves
-                                break
-
-                        # Move the piece
-                        self.selected_piece_object.position = move_position
+                        self.move_piece(self.selected_piece_object, move_position)
 
                         # Break out of the loop checking the moves
                         break
@@ -335,6 +318,71 @@ class Main:
 
         self.board_surface.fill(self.background_color.unwrap())
         self.pieces_surface.fill((0, 0, 0, 0))
+
+    def move_piece(self, piece, new_position):
+        """
+        This function moves the piece, with capturing other pieces
+        :param piece: Piece object to move
+        :param new_position: New position to move the piece to
+        """
+
+        # Get piece to capture
+        piece_captured = self.board.get_piece_at(new_position)
+
+        if piece_captured is not None:
+            # Call Piece.on_captured() if there is a piece
+            allow_to_capture = piece_captured.on_captured(piece)
+
+            if allow_to_capture:
+                selected_piece = piece
+
+                # Remove the captured piece
+                self.board.pieces.remove(piece_captured)
+
+                # Recalculate index of selected piece
+                self.selected_piece = self.board.pieces.index(selected_piece)
+            else:
+                # Call Piece.on_captured on selected piece
+                piece.on_captured(piece_captured, True)
+
+                # Remove the selected piece
+                self.board.pieces.remove(piece)
+                self.is_piece_selected = False
+
+                # Break out of the loop checking the moves
+                return
+
+        # Move the piece
+        piece.position = new_position
+
+    def fake_move_check_check(self, piece, new_position) -> bool:
+        """
+        A function to check if moving piece to new_position (with properly capturing and everyhing) will result in this piece's side being in check
+        :param piece: Piece to move
+        :param new_position: Vector2 new position to move the piece to
+        :return: True if the move is legal, False if not
+        """
+
+        original_board = deepcopy(self.board.pieces)
+        original_selected_piece = self.selected_piece
+        original_is_piece_selected = self.is_piece_selected
+
+        # Everything done to the board before "self.board.pieces = original_board" line is not going to be saved
+        self.move_piece(piece, new_position)
+
+        ally_pieces_bitmap = self.board.white_pieces_bitmap if piece.is_white else self.board.black_pieces_bitmap
+        enemy_moves_bitmap = self.board.black_moves_bitmap if piece.is_white else self.board.white_moves_bitmap
+        endangered_royal_pieces_bitmap = self.board.royal_pieces_bitmap & ally_pieces_bitmap & enemy_moves_bitmap
+
+        self.board.pieces = original_board
+        self.selected_piece = original_selected_piece
+        self.is_piece_selected = original_is_piece_selected
+
+        if endangered_royal_pieces_bitmap != 0:
+            # This move put this piece's side in check, it is illegal
+            return False
+
+        return True
 
     @property
     def selected_piece_object(self) -> Piece:
@@ -602,6 +650,54 @@ class Main:
         if not type(value) in [int, float]:
             raise ValueError("On board indicators alpha is float, so it can only bet set to int and float")
         self._on_board_indicators_alpha = value
+
+    def position_to_bit(self, position) -> int:
+        """
+        If the position is outside the board, returns 0\n
+        Shorthand for (1 << position.x) << (position.y * board_size.x)
+
+        :param position: Vector2 target position
+        :return: Integer with a single bit, corresponding to a place on bitmap
+        """
+
+        pos = Vector2(position)
+
+        if not pos.inside_of(self.board.size):
+            return 0
+
+        return (1 << pos.x) << (pos.y * self.board.size.x)
+
+    def bit_to_position(self, bit) -> Vector2:
+        """
+        :param bit: Bitmap with (preferably) one bit on it, corrseponding to a position
+        :return: Vector2 position of first bit in bitmap, if bitmap has more than one bit active in it, will return the lowest one (most top, then most left)
+        """
+
+        position = Vector2(0, 0)
+
+        for i in range(self.board.size.area):
+            _bit = (bit >> i) % 2
+
+            if _bit:
+                position = Vector2(i % self.board.size.x, i // self.board.size.x)
+
+                break
+
+        return position
+
+    def position_in_bitmap(self, bitmap, position) -> bool:
+        """
+        Shorthand for (bitmap >> position.x) >> (position.y * board_size.x) % 2 == 1\n
+        :param bitmap: The bitmap to take position from
+        :param position: Vector2 position, from top-left
+        :return: True if there is 1 in the bitmap in target position, False if not or the position is out of the board
+        """
+
+        if not position.inside_of(self.board.size):
+            return False
+
+        bit = (bitmap >> position.x) >> (position.y * self.board.size.x)
+        return bit % 2 == 1
 
 
 if __name__ == "__main__":

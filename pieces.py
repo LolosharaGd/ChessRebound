@@ -90,6 +90,7 @@ class Piece:
         self.can_capture_allies = False
         self.can_capture_enemies = True
         self.name = ""
+        self.royal = False
 
     @property
     def jumping_moves(self) -> list[Vector2]:
@@ -169,7 +170,7 @@ class Piece:
         bitmap |= self.calculate_jumping_moves(board_size, black_pieces_bitmap, white_pieces_bitmap)
 
         for sliding_move in self.sliding_moves:
-            bitmap |= self.calculate_sliding_move(board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move)
+            bitmap |= self.calculate_sliding_move(board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move, 0)
 
         return bitmap
 
@@ -217,9 +218,10 @@ class Piece:
 
         return bitmap
 
-    def calculate_sliding_move(self, board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move) -> int:
+    def calculate_sliding_move(self, board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move, extra_stoppers) -> int:
         """
         Function that calculates and returns bitmap of a sliding move this piece can do\n
+        :param extra_stoppers: Bitmap of extra stoppers, like pieces are defalut stoppers
         :param board_size: The Vector2 size of the board
         :param black_pieces_bitmap: Bitmap of all black pieces
         :param white_pieces_bitmap: Bitmap of all white pieces
@@ -254,7 +256,7 @@ class Piece:
                 break
 
             # If there is a piece under the cursor
-            if all_pieces_bitmap & cell_under_the_cursor != 0:
+            if (all_pieces_bitmap | extra_stoppers) & cell_under_the_cursor != 0:
                 break
 
             # If there is a cell under the cursor
@@ -307,35 +309,18 @@ class Piece:
         position = Vector2(0, 0)
 
         for i in range(board_size.area):
-            bit = (bitmap >> i) % 2
+            _bit = (bit >> i) % 2
 
-            if bit:
+            if _bit:
                 position = Vector2(i % board_size.x, i // board_size.x)
 
                 break
 
         return position
 
-    def bitmap_to_positions(self, bitmap) -> list[Vector2]:
-        """
-        Use this to convert bitmaps (like from Piece.get_moes_bitmap()) to a list of positions on the board
-        :param bitmap: A target bitmap, starts from top-left, and then goes like text - left-to-right and top-to-bottom
-        :return: List of Vector2 positions that are on a bitmap
-        """
-
-        positions = []
-
-        for i in range(self.board.size.area):
-            bit = (bitmap >> i) % 2
-
-            if bit:
-                positions.append(Vector2(i % self.board.size.x, i // self.board.size.x))
-
-        return positions
-
     def position_in_bitmap(self, bitmap, position, board_size) -> bool:
         """
-        Shorthand for (bitmap >> position.x) >> (position.y * board_size.x) == 1\n
+        Shorthand for (bitmap >> position.x) >> (position.y * board_size.x) % 2 == 1\n
         :param board_size: The size of the board
         :param bitmap: The bitmap to take position from
         :param position: Vector2 position, from top-left
@@ -473,3 +458,23 @@ class Queen(Piece):
             SlidingMove(Vector2(), Vector2(-1, 1)),
             SlidingMove(Vector2(), Vector2(-1, -1)),
         ]
+
+
+class King(Piece):
+    def __init__(self, position, is_white):
+        super().__init__(position, is_white)
+
+        self.self_register("King")
+
+        self.jumping_moves = [
+            Vector2(0, -1),
+            Vector2(1, -1),
+            Vector2(1, 0),
+            Vector2(1, 1),
+            Vector2(0, 1),
+            Vector2(-1, 1),
+            Vector2(-1, 0),
+            Vector2(-1, -1)
+        ]
+
+        self.royal = True
