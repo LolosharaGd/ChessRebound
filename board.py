@@ -1,5 +1,5 @@
 from Morztypes import Vector2, Vector3
-from pieces import Piece, Knight, PieceTypes
+from pieces import Piece, Knight, Bishop, Rook, Queen, King, Pawn, PieceTypes
 from custom_pieces import *
 # Sorry, I have to do the "from X import *" thing, because I don't know what will actually be in there and I don't want to make creating a new piece harder than it already is
 

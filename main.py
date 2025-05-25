@@ -1,7 +1,7 @@
 import pygame
 from Morztypes import Vector2, Vector3, can_be_used_as_vector
 from board import Board
-from pieces import Piece, Knight, Rook, Bishop, Queen, King, PieceTypes, register_piece
+from pieces import Piece, Knight, Rook, Bishop, Queen, King, Pawn, PieceTypes, register_piece
 import global_vars
 from custom_pieces import *
 from copy import deepcopy
@@ -95,6 +95,24 @@ class Main:
         self.board.pieces.append(King(Vector2(4, 7), True))
         self.board.pieces.append(King(Vector2(4, 0), False))
 
+        self.board.pieces.append(Pawn(Vector2(0, 6), True))
+        self.board.pieces.append(Pawn(Vector2(1, 6), True))
+        self.board.pieces.append(Pawn(Vector2(2, 6), True))
+        self.board.pieces.append(Pawn(Vector2(3, 6), True))
+        self.board.pieces.append(Pawn(Vector2(4, 6), True))
+        self.board.pieces.append(Pawn(Vector2(5, 6), True))
+        self.board.pieces.append(Pawn(Vector2(6, 6), True))
+        self.board.pieces.append(Pawn(Vector2(7, 6), True))
+
+        self.board.pieces.append(Pawn(Vector2(0, 1), False))
+        self.board.pieces.append(Pawn(Vector2(1, 1), False))
+        self.board.pieces.append(Pawn(Vector2(2, 1), False))
+        self.board.pieces.append(Pawn(Vector2(3, 1), False))
+        self.board.pieces.append(Pawn(Vector2(4, 1), False))
+        self.board.pieces.append(Pawn(Vector2(5, 1), False))
+        self.board.pieces.append(Pawn(Vector2(6, 1), False))
+        self.board.pieces.append(Pawn(Vector2(7, 1), False))
+
         while True:
             self.display.fill(self.background_color.unwrap())
             self.board_surface.fill(self.background_color.unwrap())
@@ -147,8 +165,11 @@ class Main:
                         # Draw normal if there are no pieces here
                         pygame.draw.rect(self.board_indicator_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
                     else:
-                        # Draw other if there is a piece here
-                        pygame.draw.rect(self.board_indicator_surface, self.on_board_indicators_colors[2], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+                        # Draw other if there is a piece here BUT if the piece is invisible draw normal
+                        if piece_on_cell.invisible:
+                            pygame.draw.rect(self.board_indicator_surface, self.on_board_indicators_colors[0], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
+                        else:
+                            pygame.draw.rect(self.board_indicator_surface, self.on_board_indicators_colors[2], (move_position * self.board_cell_size).unwrap() + self.board_cell_size.unwrap())
 
             # # !!!Debug!!!
             # for x in range(self.board.size.x):
@@ -252,6 +273,7 @@ class Main:
                 self.board.white_pieces
             ]
             self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_bitmap(*get_moves_args)
+            self.selected_legal_moves_bitmap &= ~self.selected_piece_object.self_bit_position(self.board.size)
 
             for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
                 move_is_legal = self.fake_move_check_check(self.selected_piece_object, move_position)
@@ -316,44 +338,41 @@ class Main:
 
         self.pieces_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
 
+        self.board_indicator_surface = pygame.Surface(self.total_board_size.unwrap()).convert_alpha()
+
         self.board_surface.fill(self.background_color.unwrap())
         self.pieces_surface.fill((0, 0, 0, 0))
+        self.board_indicator_surface.set_alpha(self.on_board_indicators_alpha)
+        self.board_indicator_surface.fill((0, 0, 0, 0))
 
     def move_piece(self, piece, new_position):
         """
         This function moves the piece, with capturing other pieces
         :param piece: Piece object to move
-        :param new_position: New position to move the piece to
+        :param new_position: New Vector2 position to move the piece to
         """
 
         # Get piece to capture
         piece_captured = self.board.get_piece_at(new_position)
 
+        piece.on_moved(self.board.size, new_position, piece_captured, self.board.black_pieces, self.board.white_pieces)
+
+        self.summon_and_capture_pieces_by(piece)
+
+        for other_piece in self.board.pieces:
+            if other_piece is not piece:
+                other_piece.on_other_piece_moved(self.board.size, new_position, piece, piece_captured, self.board.black_pieces, self.board.white_pieces)
+
+                self.summon_and_capture_pieces_by(other_piece)
+
         if piece_captured is not None:
             # Call Piece.on_captured() if there is a piece
-            allow_to_capture = piece_captured.on_captured(piece)
-
-            if allow_to_capture:
-                selected_piece = piece
-
-                # Remove the captured piece
-                self.board.pieces.remove(piece_captured)
-
-                # Recalculate index of selected piece
-                self.selected_piece = self.board.pieces.index(selected_piece)
-            else:
-                # Call Piece.on_captured on selected piece
-                piece.on_captured(piece_captured, True)
-
-                # Remove the selected piece
-                self.board.pieces.remove(piece)
-                self.is_piece_selected = False
-
-                # Break out of the loop checking the moves
-                return
+            self.capture_piece(piece, piece_captured)
 
         # Move the piece
         piece.position = new_position
+
+        self.summon_and_capture_pieces_by(piece)
 
     def fake_move_check_check(self, piece, new_position) -> bool:
         """
@@ -374,7 +393,7 @@ class Main:
         enemy_moves_bitmap = self.board.black_moves_bitmap if piece.is_white else self.board.white_moves_bitmap
         endangered_royal_pieces_bitmap = self.board.royal_pieces_bitmap & ally_pieces_bitmap & enemy_moves_bitmap
 
-        self.board.pieces = original_board
+        self.board.pieces = deepcopy(original_board)
         self.selected_piece = original_selected_piece
         self.is_piece_selected = original_is_piece_selected
 
@@ -383,6 +402,56 @@ class Main:
             return False
 
         return True
+
+    def summon_and_capture_pieces_by(self, source_piece):
+        # Add pieces that the piece summoned to global piece list
+        self.board.pieces += source_piece.pieces_to_summon
+        source_piece.pieces_to_summon.clear()
+
+        pieces_to_capture = source_piece.pieces_to_capture.copy()
+
+        # Capture piece that the piece captured remotely
+        for piece_to_capture in pieces_to_capture:
+            self.capture_piece(source_piece, piece_to_capture, dont_summon_and_capture=True)
+
+        source_piece.pieces_to_capture.clear()
+
+    def capture_piece(self, source_piece, target_piece, dont_summon_and_capture=False) -> bool:
+        """
+        Function that captures target_piece by source_piece\n
+        :param dont_summon_and_capture: True if you don't need to call Main.summon_and_capture_pieces_by(), False if you need to. Just leave at False if you don't modify the base code
+        :param source_piece: Piece object of source piece that captures
+        :param target_piece: Piece object of the piece that is being captured
+        :return: True if the piece got succesfully captured, False if the source piece got captured instead
+        """
+
+        print(source_piece.name + " tried to capture " + target_piece.name)
+
+        allow_to_capture = target_piece.on_captured(source_piece, self.board.black_pieces, self.board.white_pieces)
+
+        # Summon and remove pieces needed by piece captured, if needed
+        if not dont_summon_and_capture: self.summon_and_capture_pieces_by(target_piece)
+
+        if allow_to_capture:
+            selected_piece = self.selected_piece_object
+
+            # If even need to recalculate
+            if target_piece in self.board.pieces:
+                # Remove the captured piece
+                self.board.pieces.remove(target_piece)
+
+                # Recalculate index of selected piece
+                self.selected_piece = self.board.pieces.index(selected_piece)
+        else:
+            # Call Piece.on_captured on selected piece
+            source_piece.on_captured(target_piece, True)
+
+            if not dont_summon_and_capture: self.summon_and_capture_pieces_by(source_piece)
+
+            # Remove the selected piece
+            self.board.pieces.remove(source_piece)
+
+        return allow_to_capture
 
     @property
     def selected_piece_object(self) -> Piece:

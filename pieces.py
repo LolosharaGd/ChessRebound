@@ -1,6 +1,7 @@
 import pygame
 from Morztypes import Vector2, Vector3, can_be_used_as_vector
 import global_vars
+import math
 
 PieceTypes = {}
 # Up to 64 pieces!
@@ -91,6 +92,13 @@ class Piece:
         self.can_capture_enemies = True
         self.name = ""
         self.royal = False
+        self.transparent = False
+
+        # Used after on_other_piece_moved, on_piece_moved, on_captured
+        self.pieces_to_summon = []
+        self.pieces_to_capture = []
+
+        self.invisible = False
 
     @property
     def jumping_moves(self) -> list[Vector2]:
@@ -169,8 +177,15 @@ class Piece:
 
         bitmap |= self.calculate_jumping_moves(board_size, black_pieces_bitmap, white_pieces_bitmap)
 
+        all_pieces = black_pieces + white_pieces
+
+        transparent_pieces = 0
+        for piece in all_pieces:
+            if piece.transparent:
+                transparent_pieces |= piece.self_bit_position(board_size)
+
         for sliding_move in self.sliding_moves:
-            bitmap |= self.calculate_sliding_move(board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move, 0)
+            bitmap |= self.calculate_sliding_move(board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move, 0, transparent_pieces)
 
         return bitmap
 
@@ -218,9 +233,10 @@ class Piece:
 
         return bitmap
 
-    def calculate_sliding_move(self, board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move, extra_stoppers) -> int:
+    def calculate_sliding_move(self, board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move, extra_stoppers, transparent_pieces) -> int:
         """
         Function that calculates and returns bitmap of a sliding move this piece can do\n
+        :param transparent_pieces: Bitmap of pieces that are transparent to sliding moves, meaning they do not stop them
         :param extra_stoppers: Bitmap of extra stoppers, like pieces are defalut stoppers
         :param board_size: The Vector2 size of the board
         :param black_pieces_bitmap: Bitmap of all black pieces
@@ -256,7 +272,7 @@ class Piece:
                 break
 
             # If there is a piece under the cursor
-            if (all_pieces_bitmap | extra_stoppers) & cell_under_the_cursor != 0:
+            if ((all_pieces_bitmap | extra_stoppers) & ~transparent_pieces) & cell_under_the_cursor != 0:
                 break
 
             # If there is a cell under the cursor
@@ -379,16 +395,47 @@ class Piece:
 
         pass
 
-    def on_captured(self, source_piece, forced_capture=False) -> bool:
+    def on_captured(self, source_piece, black_pieces, white_pieces, forced_capture=False) -> bool:
         """
         Function automatically called when the piece is captured by another piece\n
         If forced_capture is True, then the piece will get removed regardless of the return\n
+        :param white_pieces: List of all white pieces
+        :param black_pieces: List of all black pieces
         :param source_piece: The piece that tried to capture this piece
         :param forced_capture: True if the capture is forced. Generally True when the piece is getting captured back by a piece it's trying to capture
         :return: True to allow this piece to get removed. False to not remove the piece and remove the piece that tried to capture instead
         """
 
         return True or forced_capture
+
+    def on_moved(self, board_size, new_position, captured_piece, black_pieces, white_pieces):
+        """
+        Function automatically called when a piece is moved\n
+        Keep in mind that this function is also called when the piece is fake-moved when checking for legal moves\n
+        This function is called before moving the piece or capturing another piece\n
+        :param board_size: Vector2 size of the board
+        :param new_position: Vector2 new position of the piece
+        :param black_pieces: List of all black pieces
+        :param white_pieces: List of all white pieces
+        :param captured_piece: Piece that is going to be captured by this move, None if no piece is going to be captured
+        """
+
+        pass
+
+    def on_other_piece_moved(self, board_size, new_position, piece, captured_piece, black_pieces, white_pieces):
+        """
+        Function automatically called before other piece is moved\n
+        Keep in mind that this function is also called when the piece is fake-moved when checking for legal moves\n
+        To get the old position of the piece, just use piece.position, because this function is called BEFORE the move a removing of the captured piece\n
+        :param board_size: Vector2 size of the board
+        :param new_position: New position of the piece
+        :param piece: Piece object of the piece being moved
+        :param captured_piece: Piece that is going to be captured by this move, None if no piece is going to be captured
+        :param black_pieces: List of all black pieces
+        :param white_pieces: List of all white pieces
+        """
+
+        pass
 
     def self_register(self, name):
         self.name = name
@@ -478,3 +525,75 @@ class King(Piece):
         ]
 
         self.royal = True
+
+
+class Pawn(Piece):
+    def __init__(self, position, is_white):
+        super().__init__(position, is_white)
+
+        self.self_register("Pawn")
+
+    def get_moves_bitmap(self, board_size, black_pieces_bitmap, white_pieces_bitmap, black_pieces, white_pieces) -> int:
+        bitmap = 0
+
+        all_pieces_bitmap = black_pieces_bitmap | white_pieces_bitmap
+        enemy_pieces_bitmap = black_pieces_bitmap if self.is_white else white_pieces_bitmap
+        ally_pieces_bitmap = black_pieces_bitmap if not self.is_white else white_pieces_bitmap
+
+        # If the space above is free
+        if self.position_to_bit(self.position + self.forward, board_size) & all_pieces_bitmap == 0:
+            bitmap |= self.position_to_bit(self.position + self.forward, board_size)
+
+            # If the space above it is free AND the pawn is on 2nd or 7th rank
+            if self.position_to_bit(self.position + self.forward * 2, board_size) & all_pieces_bitmap == 0 and self.position.y in [1, 6]:
+                bitmap |= self.position_to_bit(self.position + self.forward * 2, board_size)
+
+        for move_position in [Vector2(1, 0), Vector2(-1, 0)]:
+            move_bit = self.position_to_bit(self.position + self.forward + move_position, board_size)
+
+            enemy_on_move = move_bit & enemy_pieces_bitmap
+            ally_on_move = move_bit & ally_pieces_bitmap
+
+            if (enemy_on_move and self.can_capture_enemies) or (ally_on_move and self.can_capture_allies):
+                bitmap |= move_bit
+
+        return bitmap
+
+    def on_moved(self, board_size, new_position, captured_piece, black_pieces, white_pieces):
+        if math.fabs((new_position - self.position).y) == 2:
+            self.pieces_to_summon.append(EnPassant(self.position + self.forward, self.is_white))
+
+
+class EnPassant(Piece):
+    def __init__(self, position, is_white):
+        super().__init__(position, is_white)
+
+        self.self_register("EnPassant")
+
+        self.transparent = True
+        self.invisible = True
+
+    def get_moves_bitmap(self, board_size, black_pieces_bitmap, white_pieces_bitmap, black_pieces, white_pieces) -> int:
+        # Just return 0 so it doesn't waste time
+        return 0
+
+    def on_captured(self, source_piece, black_pieces, white_pieces, forced_capture=False) -> bool:
+        ally_pieces = white_pieces if self.is_white else black_pieces
+
+        if source_piece.name == "Pawn":
+            corresponding_pawn = None
+
+            for piece in ally_pieces:
+                if piece.position == self.position + self.forward:
+                    corresponding_pawn = piece
+
+                    break
+
+            if corresponding_pawn is not None:
+                self.pieces_to_capture.append(corresponding_pawn)
+
+        return True
+
+    def on_other_piece_moved(self, board_size, new_position, piece, captured_piece, black_pieces, white_pieces):
+        if captured_piece != self and not (new_position == self.position + self.forward and piece.name == "Pawn" and piece.is_white == self.is_white):
+            self.pieces_to_capture.append(self)
