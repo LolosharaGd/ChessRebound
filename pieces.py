@@ -93,6 +93,9 @@ class Piece:
         self.name = ""
         self.royal = False
         self.transparent = False
+        self.attacked = False
+
+        self.post_modifies_moves = False
 
         # Used after on_other_piece_moved, on_piece_moved, on_captured
         self.pieces_to_summon = []
@@ -188,6 +191,21 @@ class Piece:
             bitmap |= self.calculate_sliding_move(board_size, black_pieces_bitmap, white_pieces_bitmap, sliding_move, 0, transparent_pieces)
 
         return bitmap
+
+    def post_modify_moves(self, board_size, black_pieces_bitmap, white_pieces_bitmap, black_pieces, white_pieces, moves_bitmap) -> int:
+        """
+        Function that is called after get_moves_bitmap(), by default just echoes bitmap put into it\n
+        But you can modify this function, because it as given bitmap of moves that includes only legal moves\n
+        :param board_size: Vector2 size of the board
+        :param black_pieces_bitmap: Bitmap of all black pieces
+        :param white_pieces_bitmap: Bitmap of all white pieces
+        :param black_pieces: List of all black Piece object
+        :param white_pieces: List of all white Piece objects
+        :param moves_bitmap: Bitmap of moves that was returned by get_moves_bitmap(), modified to only have legal moves
+        :return: Bitmap of new moves
+        """
+
+        return moves_bitmap
 
     def calculate_jumping_move(self, board_size, black_pieces_bitmap, white_pieces_bitmap, move) -> int:
         """
@@ -474,6 +492,16 @@ class Rook(Piece):
             SlidingMove(Vector2(), Vector2(-1, 0)),
         ]
 
+    def on_moved(self, board_size, new_position, captured_piece, black_pieces, white_pieces):
+        ally_pieces = white_pieces if self.is_white else black_pieces
+
+        for ally in ally_pieces:
+            if ally.name == "King":
+                if self.position.x == 7:
+                    ally.kingside_castle_allowed = False
+                elif self.position.x == 0:
+                    ally.queenside_castle_allowed = False
+
 
 class Bishop(Piece):
     def __init__(self, position, is_white):
@@ -525,6 +553,60 @@ class King(Piece):
         ]
 
         self.royal = True
+
+        self.kingside_castle_allowed = True
+        self.queenside_castle_allowed = True
+
+        self.post_modifies_moves = True
+
+    def post_modify_moves(self, board_size, black_pieces_bitmap, white_pieces_bitmap, black_pieces, white_pieces, moves_bitmap) -> int:
+        bitmap = moves_bitmap
+
+        if not self.attacked:
+            all_pieces_bitmap = black_pieces_bitmap | white_pieces_bitmap
+            enemy_pieces_bitmap = black_pieces_bitmap if self.is_white else white_pieces_bitmap
+            ally_pieces_bitmap = black_pieces_bitmap if not self.is_white else white_pieces_bitmap
+
+            near_kingside_pos = self.position_in_bitmap(all_pieces_bitmap, self.position + Vector2(1, 0), board_size)
+            far_kingside_pos = self.position_in_bitmap(all_pieces_bitmap, self.position + Vector2(2, 0), board_size)
+            near_queenside_pos = self.position_in_bitmap(all_pieces_bitmap, self.position - Vector2(1, 0), board_size)
+            far_queenside_pos = self.position_in_bitmap(all_pieces_bitmap, self.position - Vector2(2, 0), board_size)
+            farthest_queenside_pos = self.position_in_bitmap(all_pieces_bitmap, self.position - Vector2(3, 0), board_size)
+
+            check_on_kingside = not self.position_in_bitmap(moves_bitmap, self.position + Vector2(1, 0), board_size)
+            check_on_queenside = not self.position_in_bitmap(moves_bitmap, self.position - Vector2(1, 0), board_size)
+
+            if self.kingside_castle_allowed:
+                if not (near_kingside_pos or far_kingside_pos or check_on_kingside):
+                    bitmap |= self.position_to_bit(self.position + Vector2(2, 0), board_size)
+
+            if self.queenside_castle_allowed:
+                if not (near_queenside_pos or far_queenside_pos or farthest_queenside_pos or check_on_queenside):
+                    bitmap |= self.position_to_bit(self.position - Vector2(2, 0), board_size)
+
+        return bitmap
+
+    def on_moved(self, board_size, new_position, captured_piece, black_pieces, white_pieces):
+        self.kingside_castle_allowed = False
+        self.queenside_castle_allowed = False
+
+        ally_pieces = white_pieces if self.is_white else black_pieces
+
+        if self.position.x == 4 and new_position.x == 6:  # Kingside castle
+            for ally in ally_pieces:
+                if ally.name == "Rook":
+                    if ally.position.x == 7:
+                        ally.position.x = 5
+
+                        break
+
+        if self.position.x == 4 and new_position.x == 2:  # Kingside castle
+            for ally in ally_pieces:
+                if ally.name == "Rook":
+                    if ally.position.x == 0:
+                        ally.position.x = 3
+
+                        break
 
 
 class Pawn(Piece):

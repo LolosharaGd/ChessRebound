@@ -275,6 +275,16 @@ class Main:
             self.selected_legal_moves_bitmap = self.selected_piece_object.get_moves_bitmap(*get_moves_args)
             self.selected_legal_moves_bitmap &= ~self.selected_piece_object.self_bit_position(self.board.size)
 
+            # Modify bitmap to only include legal moves
+            for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
+                move_is_legal = self.fake_move_check_check(self.selected_piece_object, move_position)
+
+                if not move_is_legal:
+                    self.selected_legal_moves_bitmap &= ~self.position_to_bit(move_position)
+
+            self.selected_legal_moves_bitmap = self.selected_piece_object.post_modify_moves(*(get_moves_args + [self.selected_legal_moves_bitmap]))
+
+            # Modify bitmap to only include legal moves again
             for move_position in self.bitmap_to_positions(self.selected_legal_moves_bitmap):
                 move_is_legal = self.fake_move_check_check(self.selected_piece_object, move_position)
 
@@ -374,6 +384,33 @@ class Main:
 
         self.summon_and_capture_pieces_by(piece)
 
+        # Cache it, so it doesn't need to be called every time
+        black_attacked_cells = self.bitmap_to_positions(self.board.black_moves_bitmap)
+        white_attacked_cells = self.bitmap_to_positions(self.board.white_moves_bitmap)
+
+        # Update attacked pieces
+        for black_piece in self.board.black_pieces:
+            black_piece_attacked = False
+
+            for move in white_attacked_cells:
+                if black_piece.position == move:
+                    black_piece_attacked = True
+
+                    break
+
+            black_piece.attacked = black_piece_attacked
+
+        for white_piece in self.board.white_pieces:
+            white_piece_attacked = False
+
+            for move in black_attacked_cells:
+                if white_piece.position == move:
+                    white_piece_attacked = True
+
+                    break
+
+            white_piece.attacked = white_piece_attacked
+
     def fake_move_check_check(self, piece, new_position) -> bool:
         """
         A function to check if moving piece to new_position (with properly capturing and everyhing) will result in this piece's side being in check
@@ -424,8 +461,6 @@ class Main:
         :param target_piece: Piece object of the piece that is being captured
         :return: True if the piece got succesfully captured, False if the source piece got captured instead
         """
-
-        print(source_piece.name + " tried to capture " + target_piece.name)
 
         allow_to_capture = target_piece.on_captured(source_piece, self.board.black_pieces, self.board.white_pieces)
 
