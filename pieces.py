@@ -644,6 +644,9 @@ class Pawn(Piece):
     def on_moved(self, board_size, new_position, captured_piece, black_pieces, white_pieces):
         if math.fabs((new_position - self.position).y) == 2:
             self.pieces_to_summon.append(EnPassant(self.position + self.forward, self.is_white))
+        elif new_position.y in [0, 7]:
+            self.pieces_to_summon.append(Queen(new_position, self.is_white))
+            self.pieces_to_capture.append(self)
 
 
 class EnPassant(Piece):

@@ -475,8 +475,11 @@ class Main:
                 # Remove the captured piece
                 self.board.pieces.remove(target_piece)
 
-                # Recalculate index of selected piece
-                self.selected_piece = self.board.pieces.index(selected_piece)
+                if target_piece == selected_piece:
+                    self.is_piece_selected = False
+                else:
+                    # Recalculate index of selected piece
+                    self.selected_piece = self.board.pieces.index(selected_piece)
         else:
             # Call Piece.on_captured on selected piece
             source_piece.on_captured(target_piece, True)
